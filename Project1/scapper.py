@@ -29,8 +29,12 @@ df = pd.DataFrame(data, columns=headers)
 df.to_csv('./dataset/raw_train_data.csv')
 
 df = df.drop(columns=['Rank', 'Pos', 'Results Score'])
-df['Venue'] = [x[-4:-1] for x in df['Venue']]
-df['Date'] = [datetime.strptime(x, '%d %b %Y') for x in df['Date']]
-df['DOB'] = [datetime.strptime(x, '%d %b %Y') for x in df['DOB']]
+for i in df.index:
+    try:
+        df['Venue'][i] = df['Venue'][i][-4:-1]
+        df['Date'][i] = datetime.strptime(df['Date'][i], '%d %b %Y') 
+        df['DOB'][i] = datetime.strptime(df['DOB'][i], '%d %b %Y') 
+    except:
+        print(i)
 df.to_csv('./dataset/train_data.csv')
 print(df)
