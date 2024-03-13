@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
 data = []
-scrape = False
+scrape = True
 
 if not scrape:
     df = pd.read_csv('./dataset/raw_train_data.csv')
@@ -31,16 +31,4 @@ else:
     headers = data.pop(0)
     df = pd.DataFrame(data, columns=headers)
     df.to_csv('./dataset/raw_train_data.csv')
-
-df = df.drop(columns=['Rank', 'Pos', 'Results Score'])
-drop_index = []
-for i in tqdm(df.index):
-    try:
-        df['Venue'][i] = df['Venue'][i][-4:-1]
-        df['Date'][i] = datetime.strptime(df['Date'][i], '%d %b %Y') 
-        df['DOB'][i] = datetime.strptime(df['DOB'][i], '%d %b %Y')
-    except:
-        drop_index.append(i)
-df.drop(index=drop_index)
-df.to_csv('./dataset/train_data.csv')
 print(df)
