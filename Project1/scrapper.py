@@ -30,5 +30,5 @@ else:
 
     headers = data.pop(0)
     df = pd.DataFrame(data, columns=headers)
-    df.to_csv('./dataset/raw_record_data.csv')
+    df.to_csv('./dataset/record/raw_record_data.csv')
 print(df)
