@@ -82,5 +82,5 @@ for url_idx in tqdm(range(len(url_list_men100))):
     header.append('w&h')
     df = pd.DataFrame(data)
     pd.to_pickle(wind_list, './new_dataset/wind_list.pkl')
-    df.to_csv('./new_dataset/raw_data.csv')
+    df.to_csv('./new_dataset/raw_data.csv', index=False)
 
