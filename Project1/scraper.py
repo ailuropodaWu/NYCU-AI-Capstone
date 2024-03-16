@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from tqdm import tqdm
 
-DEBUG = False
 # scrape the url of the men's 100m of 1948 - 2020
 url_root = "https://www.olympedia.org/"
 data = []
@@ -20,13 +19,14 @@ for row in table.find_all('tr'):
     if len(cols) == 0 or int(cols[0].text) < 1948:
         continue
     url_list_men100.append(cols[1].a.get('href'))
-if DEBUG:
-    print(url_list_men100)
+
+# scrape the data from the url of the men's 100m on each years
 for url_idx in tqdm(range(len(url_list_men100))):
     url = url_list_men100[url_idx]
     html = rq.get(url_root + url).text
     soup = BeautifulSoup(html, 'html.parser')
     wind_info = []
+
     while True: # Get the information of wind
         t_wind = soup.find('table', {'class': 'biodata'})
         if t_wind is None:
@@ -40,9 +40,8 @@ for url_idx in tqdm(range(len(url_list_men100))):
             wind_info.append(wind)
             break
         t_wind.decompose()
-    if DEBUG:
-        print(wind_info)
-        
+    
+    # get the record of all athletes
     table = soup.find('table', {"class": "table table-striped"})
     for row in table.find_all('tr'):
         cols = row.find_all('td')
@@ -72,12 +71,10 @@ for url_idx in tqdm(range(len(url_list_men100))):
             except:
                 cols[i] = None
         cols.append(url_idx * 4 + 1948)
-        if DEBUG:
-            print(cols)
         data.append(cols)
     wind_list.append(wind_info)
 
-
+# manually add header and save the data as .csv
 header = ['Name', 'Nation', 'R1', 'R2', 'R3', 'R4', 'Gold', 'Silver', 'Bronze', 'Birth', 'Body', 'Year']
 df = pd.DataFrame(data, columns=header)
 pd.to_pickle(wind_list, './dataset/wind_list.pkl')
