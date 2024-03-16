@@ -5,7 +5,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 DEBUG = False
-# scrape the url of the men's 100m of 1896 - 2016
+# scrape the url of the men's 100m of 1948 - 2020
 url_root = "https://www.olympedia.org/"
 data = []
 wind_list = []
@@ -47,11 +47,11 @@ for url_idx in tqdm(range(len(url_list_men100))):
     table = soup.find('table', {"class": "table table-striped"})
     for row in table.find_all('tr'):
         cols = row.find_all('td')
-        if len(cols) == 0: # header
-            if url_idx == 0:
-                header = row.find_all('th')
-                header = header[2:]
+        if len(cols) == 0: 
             continue
+        if url_idx < 16 and cols[4].text.strip()[0] ==  '–':
+            # since 2012 the rule of Preliminary Round is changed
+            break
         cols = cols[2:] # since the first 2 columns are Pos & Nr
 
         # scrape data of athlete
@@ -73,12 +73,14 @@ for url_idx in tqdm(range(len(url_list_men100))):
             except:
                 cols[i] = None
         cols.append(url_idx * 4 + 1948)
-        print(cols)
+        if DEBUG:
+            print(cols)
         data.append(cols)
     wind_list.append(wind_info)
-    header.append('Birth')
-    header.append('w&h')
-    df = pd.DataFrame(data, columns=header)
-    pd.to_pickle(wind_list, './new_dataset/_new_wind_list.pkl')
-    df.to_csv('./new_dataset/new_raw_data.csv', index=False)
+
+
+header = ['Name', 'Nation', 'R1', 'R2', 'R3', 'R4', 'Gold', 'Silver', 'Bronze', 'Birth', 'Body', 'Year']
+df = pd.DataFrame(data, columns=header)
+pd.to_pickle(wind_list, './dataset/wind_list.pkl')
+df.to_csv('./dataset/raw_data.csv', index=False)
 
