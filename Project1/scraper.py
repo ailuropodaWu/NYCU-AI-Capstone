@@ -41,7 +41,7 @@ for url_idx in tqdm(range(len(url_list_men100))):
             break
         t_wind.decompose()
     
-    # get the record of all athletes
+# get the record of all athletes
     table = soup.find('table', {"class": "table table-striped"})
     for row in table.find_all('tr'):
         cols = row.find_all('td')
@@ -52,7 +52,7 @@ for url_idx in tqdm(range(len(url_list_men100))):
             break
         cols = cols[2:] # since the first 2 columns are Pos & Nr
 
-        # scrape data of athlete
+# scrape data of athlete
         url_athlete = cols[0].a.get('href')
         html_athlete = rq.get(url_root + url_athlete).text
         soup_athlete = BeautifulSoup(html_athlete, 'html.parser')
