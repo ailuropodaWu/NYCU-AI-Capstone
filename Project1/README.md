@@ -15,7 +15,7 @@ Each row represents a record with following attributes about a competitor in a s
 - ***Nation***: <u>int</u>, code of the nation where the competitor from according to the dictionary you can see at [***generate_train_data.ipynb***](https://github.com/ailuropodaWu/NYCU-AI-Capstone/blob/main/Project1/generate_train_data.ipynb)
 - ***Weight*** *(kg)*: <u>float</u>, weight of the competitor
 - ***Height*** *(m)*: <u>float</u>, height of the competitor
-- ***BMI***: <u>float</u>, calculated by the formula $ \dfrac{Height(n)^2}{Weight(kg)} $
+- ***BMI***: <u>float</u>, calculated by the formula $\dfrac{Height(n)^2}{Weight(kg)}$
 - ***Age***: <u>float</u>, age of the competitor, calculated from the birthday to the first day the event start
 - ***Year***: <u>int</u>, the year of the event
 - ***Round***: <u>int</u>, round in the competition, range from 1-4(4 means final)
@@ -65,7 +65,7 @@ Four types of training dataset:
 - Hundred *(100 data)*
 
 ### Evaluation metrics
-- $ R^2 $ ***score***: 
+- $R^2$ ***score***: 
 
     ![alt text](./asset/r2score_formula.png)
 
