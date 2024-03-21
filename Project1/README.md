@@ -11,17 +11,17 @@ This is a dataset on the men’s 100 meters events in the Olympics from 1948 to 
 ### Attributes
 The attributes in this dataset correspond to the information about athletes and other relevant details about the events. The label of the dataset represents the performance of each athlete in a competition.
 Each row represents a record with following attributes about a competitor in a single game. And here is the list of attributes:
-- ***Name***: <u>string</u>, name of the competitor, unuseful feature
-- ***Nation***: <u>int</u>, code of the nation where the competitor from according to the dictionary you can see at [***generate_train_data.ipynb***](https://github.com/ailuropodaWu/NYCU-AI-Capstone/blob/main/Project1/generate_train_data.ipynb)
-- ***Weight*** *(kg)*: <u>float</u>, weight of the competitor
-- ***Height*** *(m)*: <u>float</u>, height of the competitor
-- ***BMI***: <u>float</u>, calculated by the formula $\dfrac{Height(n)^2}{Weight(kg)}$
-- ***Age***: <u>float</u>, age of the competitor, calculated from the birthday to the first day the event start
-- ***Year***: <u>int</u>, the year of the event
-- ***Round***: <u>int</u>, round in the competition, range from 1-4(4 means final)
-- ***Wind*** *(m/s)*: <u>float</u>, wind information of the game
-- ***isHometown***: <u>bool</u>, whether the venue of the event is the hometown of the competitor or not
-- ***Label*** *(s)*: <u>float</u>, performance of the competitor in the game
+- ***Name***: <ins>string</ins>, name of the competitor, unuseful feature
+- ***Nation***: <ins>int</ins>, code of the nation where the competitor from according to the dictionary you can see at [***generate_train_data.ipynb***](https://github.com/ailuropodaWu/NYCU-AI-Capstone/blob/main/Project1/generate_train_data.ipynb)
+- ***Weight*** *(kg)*: <ins>float</ins>, weight of the competitor
+- ***Height*** *(m)*: <ins>float</ins>, height of the competitor
+- ***BMI***: <ins>float</ins>, calculated by the formula $\dfrac{Height(n)^2}{Weight(kg)}$
+- ***Age***: <ins>float</ins>, age of the competitor, calculated from the birthday to the first day the event start
+- ***Year***: <ins>int</ins>, the year of the event
+- ***Round***: <ins>int</ins>, round in the competition, range from 1-4(4 means final)
+- ***Wind*** *(m/s)*: <ins>float</ins>, wind information of the game
+- ***isHometown***: <ins>bool</ins>, whether the venue of the event is the hometown of the competitor or not
+- ***Label*** *(s)*: <ins>float</ins>, performance of the competitor in the game
 
 
 ### Web scraping
@@ -77,7 +77,7 @@ Four types of training dataset:
 
 ### Result
 **Result table**  
-    <u>num</u>: best under the same training data<br>
+    <ins>num</ins>: best under the same training data<br>
     **num**: best under the same algorithm
 
 ![alt text](./asset/result_table.png)
