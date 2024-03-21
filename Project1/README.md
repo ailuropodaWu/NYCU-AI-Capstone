@@ -65,13 +65,12 @@ Four types of training dataset:
 - Hundred *(100 data)*
 
 ### Evaluation metrics
-- $R^2$ ***score***: 
-
-    ![alt text](./asset/r2score_formula.png)
+- $R^2$ ***score***:
+    
+    ![R2score_formula](./asset/r2score_formula.png)
 
 - ***RMSE*** *(RMSD)*: 
-
-    ![alt text](./asset/rmse_formula.png)
+    ![RMSE_formula](./asset/rmse_formula.png)
 
 - ***Accuracy***: the accuracy rate under a specific error
 
