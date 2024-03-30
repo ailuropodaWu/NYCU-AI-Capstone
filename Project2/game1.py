@@ -11,7 +11,7 @@ import copy
     init_pos=[x,y],代表起始位置
     
 '''
-direction = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
+DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
 
 
 def InitPos(mapStat):
@@ -26,14 +26,14 @@ def InitPos(mapStat):
             if mapStat[row][col] != 0: 
                 continue
             if (row == 0 or row == len(mapStat) - 1 or mapStat[row+1][col] == -1 or mapStat[row-1][col] == -1) or \
-                (col == 0 or col == len(mapStat[row]) - 1 or mapStat[row][col+1] == -1 or mapStat[row][col-1] == -1):
+                (col == 0 or col == len(mapStat[row]) - 1 or mapStat[row][col + 1] == -1 or mapStat[row][col - 1] == -1):
                 legalMove = 0
-                for dir in direction:
+                for dir in DIRECTION:
                     if dir == (0, 0):
                         continue
                     if 0 <= row + dir[0] < len(mapStat) and \
                         0 <= col + dir[1] < len(mapStat[0]) and \
-                        mapStat[row+dir[0]][col+dir[1]] == 0:
+                        mapStat[row + dir[0]][col + dir[1]] == 0:
                         if 0 in dir:
                             legalMove += 0.5
                         legalMove += 1
@@ -77,28 +77,41 @@ def GetStep(playerID, mapStat, sheepStat):
             id -= 1
             self._calculateScore()
             ranks = np.argsort(-self.scores)
-            legal_moves = self.get_legal_moves(id)
-            good_move_num = 0
-            for move in legal_moves:
+            legalMoves = self.getLegalMoves(id)
+            goodMoveNum = 0
+            for move in legalMoves:
                 if move[-1] % 2 == 0:
-                    good_move_num += 1
+                    goodMoveNum += 1
             score = self.scores[id]
             rank = np.where(ranks == id)[0][0] + 1
-            eval = 0.4 * score + 1 / rank + 0.1 * good_move_num 
+            eval = 0.4 * score + 1 / rank + 0.1 * goodMoveNum 
             return eval
         
-        def gameOver(self, id):
+        def getScore(self, id):
+            return self.scores[id-1]
+        
+        def getRank(self, id):
+            ranks = np.argsort(-self.scores)
+            return np.where(ranks == id - 1)[0][0] + 1
+        
+        def noMove(self, id):
             for row in range(len(self.mapStat)):
                 for col in range(len(self.mapStat[0])):
-                    for dir_i in range(len(direction)):
+                    for dir_i in range(len(DIRECTION)):
                         if dir_i == 4:
                             continue
-                        dir = direction[dir_i]
+                        dir = DIRECTION[dir_i]
                         if self.mapStat[row][col] == id and self.sheep[row][col] > 1 and \
                             0 <= row + dir[0] < len(self.mapStat) and \
                             0 <= col + dir[1] < len(self.mapStat[0]) and \
-                            self.mapStat[row+dir[0]][col+dir[1]] == 0:
+                            self.mapStat[row + dir[0]][col + dir[1]] == 0:
                             return False
+            return True
+        
+        def gameOver(self):
+            for id in range(1, self.playerNum + 1):
+                if not self.noMove(id):
+                    return False
             return True
         def _calculateScore(self):
             for i in range(self.playerNum):
@@ -130,64 +143,64 @@ def GetStep(playerID, mapStat, sheepStat):
                         regions.append(region)
             return regions
 
-        def get_legal_moves(self, id):
-            legal_moves = []
+        def getLegalMoves(self, id):
+            legalMoves = []
             for row in range(len(self.mapStat)):
                 for col in range(len(self.mapStat[0])):
                     if self.mapStat[row][col] != id or self.sheep[row][col] <= 1:  # Select cells with more than one sheep
                         continue
-                    for dir_i in range(len(direction)):
+                    for dir_i in range(len(DIRECTION)):
                         if dir_i == 4:
                             continue
-                        dir = direction[dir_i]
+                        dir = DIRECTION[dir_i]
                         if 0 <= row + dir[0] < len(self.mapStat) and \
                             0 <= col + dir[1] < len(self.mapStat[0]) and \
                             self.mapStat[row+dir[0]][col+dir[1]] == 0:
                             # only consider half split
-                            legal_moves.append([(row, col), int(self.sheep[row][col] // 2), dir_i+1])
-            return legal_moves
+                            legalMoves.append([(row, col), int(self.sheep[row][col] // 2), dir_i+1])
+            return legalMoves
 
 
-        def apply_move(self, move, id):
-            new_state = copy.deepcopy(self)
+        def getNextState(self, move, id):
+            newState = copy.deepcopy(self)
             pos, split, dir_i = move
             row, col = pos
             if self.mapStat[row][col] != id or self.sheep[row][col] < split:
                 raise("State error")
-            dir = direction[dir_i-1]
-            new_state.sheep[row][col] -= split
+            dir = DIRECTION[dir_i - 1]
+            newState.sheep[row][col] -= split
             end = False
             while not end:
                 if 0 <= row + dir[0] < len(self.mapStat) and \
                     0 <= col + dir[1] < len(self.mapStat[0]) and \
-                    new_state.mapStat[row+dir[0]][col+dir[1]] == 0:
+                    newState.mapStat[row + dir[0]][col + dir[1]] == 0:
                     row += dir[0]
                     col += dir[1]
                 else:
                     end = True
-            if new_state.sheep[row][col] != 0 or new_state.mapStat[row][col] != 0:
+            if newState.sheep[row][col] != 0 or newState.mapStat[row][col] != 0:
                 raise("Move error")
-            new_state.sheep[row][col] = split
-            new_state.mapStat[row][col] = id
+            newState.sheep[row][col] = split
+            newState.mapStat[row][col] = id
 
-            return new_state
+            return newState
 
     
 
     maxDepth = 1
-    def minimax(game_state: GameState, depth, id, alpha, beta):
-        if depth == 0 or game_state.gameOver(id):
-            return game_state.evaluate(id)
-        legal_moves = game_state.get_legal_moves(id)
+    def minimax(gameState: GameState, depth, id, alpha, beta):
+        if depth == 0 or gameState.noMove(id):
+            return gameState.evaluate(id)
+        legalMoves = gameState.getLegalMoves(id)
         evalNodes = []
         if id == playerID:
             ret = float("-inf")
-            next_id = id + 1
-            if id == game_state.playerNum:
-                next_id = 1
-            for move in legal_moves:
-                new_state = game_state.apply_move(move, id)
-                eval = minimax(new_state, depth, next_id, alpha, beta)
+            nextID = id + 1
+            if id == gameState.playerNum:
+                nextID = 1
+            for move in legalMoves:
+                newState = gameState.getNextState(move, id)
+                eval = minimax(newState, depth, nextID, alpha, beta)
                 evalNodes.append(eval)
                 alpha = max(alpha, max(evalNodes))
                 ret = max(evalNodes)
@@ -196,60 +209,162 @@ def GetStep(playerID, mapStat, sheepStat):
             if depth == maxDepth:
                 for i in range(len(evalNodes)): 
                     if evalNodes[i] == max(evalNodes):
-                        return legal_moves[i]
+                        return legalMoves[i]
             else:
                 return ret
         else:
-            next_id = id + 1
-            if id == game_state.playerNum:
-                next_id = 1
-            if next_id == playerID:
+            nextID = id + 1
+            if id == gameState.playerNum:
+                nextID = 1
+            if nextID == playerID:
                 depth -= 1
-            for move in legal_moves:
-                new_state = game_state.apply_move(move, id)
-                eval = minimax(new_state, depth, next_id, alpha, beta)
+            for move in legalMoves:
+                newState = gameState.getNextState(move, id)
+                eval = minimax(newState, depth, nextID, alpha, beta)
                 evalNodes.append(eval)
                 beta = min(beta, min(evalNodes))
                 if min(evalNodes) <= alpha:
                     return min(evalNodes)
             return min(evalNodes)
+    
+    class Node:
+        def __init__(self, state: GameState, parent=None, move=None):
+            self.state = state
+            self.parent = parent
+            self.move = move
+            self.children = []
+            self.visits = 0
+            self.rank = 0
+
+        def isLeaf(self):
+            return len(self.children) == 0
+
+        def selectChild(self):
+            # Implement UCB1 selection strategy
+            if self.isLeaf():
+                self.expand()
+                return random.choice(self.children)
+            else:
+                ucbValues = []
+                for child in self.children:
+                    if child.visits:
+                        value = (child.rank / child.visits) + np.sqrt(2 * np.log(self.visits) / child.visits)
+                    else:
+                        value = float('inf')
+                ucbValues.append(value)
+                return self.children[np.argmax(ucbValues)]
+            
+
+        def expand(self):
+            # Expand the node by adding child nodes for each legal move
+            legalMoves = self.state.getLegalMoves(playerID)
+            for move in legalMoves:
+                newState = self.state.getNextState(move, playerID)
+                id = playerID
+                for _ in range(1, self.state.playerNum):
+                    id = id % self.state.playerNum + 1
+                    otherLegalMoves = newState.getLegalMoves(id)
+                    if not otherLegalMoves:
+                        continue
+                    otherMove = random.choice(otherLegalMoves)
+                    newState = newState.getNextState(otherMove, id)
+                childNode = Node(newState, self, move)
+                self.children.append(childNode)
+
+        def backpropagate(self, rank):
+            # Update visit and win counts of nodes in the path from root to this node
+            self.visits += 1
+            self.rank += 1/ rank
+            if self.parent is not None:
+                self.parent.backpropagate(rank)
+
+        def bestChild(self):
+            # Return the best child node based on UCB1 formula
+            if not self.children:
+                raise ValueError("No children to select from.")
+            return max(self.children, key=lambda c: c.visits)
         
+
+    def simulate(gameState: GameState):
+        passID = []
+        id = playerID
+        while not gameState.gameOver():
+            if id in passID:
+                id = (id % gameState.playerNum) + 1
+                continue
+            legalMoves = gameState.getLegalMoves(id)
+            if not legalMoves:
+                passID.append(id)
+                id = (id % gameState.playerNum) + 1
+                continue
+            move = random.choice(legalMoves)
+            gameState = gameState.getNextState(move, id)
+            id = (id % gameState.playerNum) + 1
+        rank = gameState.getRank(playerID) if gameState.gameOver() else None
+        return rank
+
+    def MCTS(gameState: GameState, maxSimulation=1000):
+        root = Node(gameState)
+        for i in range(maxSimulation):
+            node = root
+            newState = copy.deepcopy(gameState)
+            while not node.isLeaf() and not newState.noMove(playerID):
+                node = node.selectChild()
+                newState = copy.deepcopy(node.state)
+            if not newState.noMove(playerID):
+                node.expand()
+                node = node.selectChild()
+                newState = node.state
+            rank = simulate(newState)
+            node.backpropagate(rank)
+            if i % 5 == 0:
+                for c in range(len(root.children)):
+                    root.children[c].children.clear()
+        bestMove = root.bestChild().move
+        return bestMove
+
+
+
+    algorithm = 'random'
     state = GameState(mapStat, sheepStat)
 
-    
-    return minimax(state, maxDepth, 1, float("-inf"), float("inf"))
-
-
-    # my_stat = []
-    # best_distance = 0
-    # print(mapStat)
-    # for r in range(len(mapStat)):
-    #     for c in range(len(mapStat[r])):
-    #         if mapStat[r][c] == playerID:
-    #             my_stat.append(((r, c), sheepStat[r][c]))
-    # for stat in my_stat:
-    #     if stat[1] <= 1:
-    #         continue
-    #     for dir_i in range(len(direction)):
-    #         if dir_i == 4:
-    #             continue
-    #         dir = direction[dir_i]
-    #         distance = 0
-    #         end = False
-    #         r, c = stat[0][0], stat[0][1]
-    #         while not end:
-    #             if (r + dir[0]) >= 0 and (r + dir[0]) <= len(mapStat)-1 and (c + dir[1]) >= 0 and (c + dir[1]) <= len(mapStat[r])-1 \
-    #                   and mapStat[r + dir[0]][c + dir[1]] == 0:
-    #                 distance += 1
-    #                 r += dir[0]
-    #                 c += dir[1]
-    #             else:
-    #                 end = True
-    #         if distance > best_distance:
-    #             best_distance = distance
-    #             step = [stat[0], int(stat[1] // 2), dir_i+1]
-    #             print(step)
-    # return step
+    if algorithm == 'minimax':
+        return minimax(state, maxDepth, 1, float("-inf"), float("inf"))
+    elif algorithm == 'mcts':
+        return MCTS(state, 100)
+    elif algorithm == 'random':
+        legalMoves = state.getLegalMoves(playerID)
+        return random.choice(legalMoves) if legalMoves else None
+    else:
+        my_stat = []
+        best_distance = 0
+        print(mapStat)
+        for r in range(len(mapStat)):
+            for c in range(len(mapStat[r])):
+                if mapStat[r][c] == playerID:
+                    my_stat.append(((r, c), sheepStat[r][c]))
+        for stat in my_stat:
+            if stat[1] <= 1:
+                continue
+            for dir_i in range(len(DIRECTION)):
+                if dir_i == 4:
+                    continue
+                dir = DIRECTION[dir_i]
+                distance = 0
+                end = False
+                r, c = stat[0][0], stat[0][1]
+                while not end:
+                    if (r + dir[0]) >= 0 and (r + dir[0]) <= len(mapStat)-1 and (c + dir[1]) >= 0 and (c + dir[1]) <= len(mapStat[r])-1 \
+                        and mapStat[r + dir[0]][c + dir[1]] == 0:
+                        distance += 1
+                        r += dir[0]
+                        c += dir[1]
+                    else:
+                        end = True
+                if distance > best_distance:
+                    best_distance = distance
+                    step = [stat[0], int(stat[1] // 2), dir_i+1]
+        return step
 
 
 # player initial
