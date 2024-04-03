@@ -1,3 +1,5 @@
+.venv
+
 *.csv
 *.pkl
 Project1/~$report.docx
