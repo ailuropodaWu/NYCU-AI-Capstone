@@ -54,11 +54,11 @@ class GameState:
         for i in range(self.playerNum):
             id = i + 1
             connectedRegions = self._findConnected(id)
-            self.scores[i] = round(sum(len(region) ** 1.25 for region in connectedRegions))
+            self.scores[i] = np.round(np.sum(len(region) ** 1.25 for region in connectedRegions))
 
     def _findConnected(self, id):
         visited = set()
-        regions = []
+        connectedRegions = []
 
         def dfs(row, col, region):
             if row < 0 or row >= len(self.mapStat) or \
@@ -73,13 +73,12 @@ class GameState:
                 dfs(row, col + 1, region)
                 dfs(row, col - 1, region)
 
-        for row in range(len(self.mapStat)):
-            for col in range(len(self.mapStat[0])):
-                if self.mapStat[row, col] == id and (row, col) not in visited:
-                    region = []
-                    dfs(row, col, region)
-                    regions.append(region)
-        return regions
+        for row, col in np.ndindex(self.mapStat.shape):
+            if self.mapStat[row, col] == id and (row, col) not in visited:
+                region = []
+                dfs(row, col, region)
+                connectedRegions.append(region)
+        return connectedRegions
 
     def getLegalMoves(self, id):
         legalMoves = []
