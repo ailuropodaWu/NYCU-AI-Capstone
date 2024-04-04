@@ -1,6 +1,4 @@
-import copy
 import numpy as np
-import utils
 
 from game_state import GameState as BaseGameState
 
@@ -10,89 +8,18 @@ DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1
 
 class GameState(BaseGameState):
     def __init__(self, _mapStat, _sheepStat, _playerNum=4):
-        self.mapStat = np.asarray(_mapStat)
-        self.sheep = np.asarray(_sheepStat)
-        self.scores = np.zeros((_playerNum,))
-        self.playerNum = _playerNum
+        super().__init__(_mapStat, _sheepStat, _playerNum)
 
     def evaluate(self, id):
-        id -= 1
         self._calculateScore()
-        ranks = np.argsort(-self.scores)
-        legalMoves = self.getLegalMoves(id)
-        goodMoveNum = 0
-        for move in legalMoves:
-            if move[-1] % 2 == 0:
-                goodMoveNum += 1
-        score = self.scores[id]
-        rank = np.where(ranks == id)[0][0] + 1
-        eval = 0.4 * score + 1 / rank + 0.1 * goodMoveNum 
-        return eval
-
-    def getScore(self, id):
-        return self.scores[id - 1]
-
-    def getRank(self, id):
-        ranks = np.argsort(-self.scores)
-        return np.where(ranks == id - 1)[0][0] + 1
-
-    def noMove(self, id):
-        for row, col in np.ndindex(self.mapStat.shape):
-            for dir in DIRECTION:
-                if dir[0] == 0 and dir[1] == 0: continue
-                if self.mapStat[row, col] == id and self.sheep[row, col] > 1 and \
-                    0 <= row + dir[0] < len(self.mapStat) and \
-                    0 <= col + dir[1] < len(self.mapStat[0]) and \
-                    self.mapStat[row + dir[0], col + dir[1]] == 0:
-                    return False
-        return True
-
-    def gameOver(self):
-        for id in range(1, self.playerNum + 1):
-            if not self.noMove(id):
-                return False
-        return True
-
-    def _calculateScore(self):
-        for i in range(self.playerNum):
-            id = i + 1
-            connectedRegions = utils.findConnected(self, id)
-            self.scores[i] = np.round(np.sum(len(region) ** 1.25 for region in connectedRegions))
-            
-    def getLegalMoves(self, id):
-        legalMoves = []
-        for row, col in np.ndindex(self.mapStat.shape):
-            # Select cells with more than one sheep
-            if self.mapStat[row, col] != id or self.sheep[row, col] <= 1: continue
-            for dir_i, dir in enumerate(DIRECTION):
-                if dir_i == 4: continue
-                if 0 <= row + dir[0] < len(self.mapStat) and \
-                    0 <= col + dir[1] < len(self.mapStat[0]) and \
-                    self.mapStat[row+dir[0], col+dir[1]] == 0:
-                    # only consider half split
-                    legalMoves.append([(row, col), int(self.sheep[row, col] // 2), dir_i + 1])
-        return legalMoves
-
-    def getNextState(self, move, id):
-        newState = copy.deepcopy(self)
-        pos, split, dir_i = move
-        row, col = pos
-        if self.mapStat[row, col] != id or self.sheep[row, col] < split:
-            raise("State error")
-        dir = DIRECTION[dir_i - 1]
-        newState.sheep[row, col] -= split
-        end = False
-        while not end:
-            if 0 <= row + dir[0] < len(self.mapStat) and \
-                0 <= col + dir[1] < len(self.mapStat[0]) and \
-                newState.mapStat[row + dir[0], col + dir[1]] == 0:
-                row += dir[0]
-                col += dir[1]
-            else:
-                end = True
-        if newState.sheep[row, col] != 0 or newState.mapStat[row, col] != 0:
-            raise("Move error")
-        newState.sheep[row, col] = split
-        newState.mapStat[row, col] = id
-
-        return newState
+        rank = self.getRank(id)
+        fourNeighbors, eightNeighbors = 0, 0
+        for move in self.getLegalMoves(id):
+            if move[-1] % 2 == 0: fourNeighbors += 1
+            else: eightNeighbors += 1
+        sheeps = self.sheep[self.mapStat == id]
+        score_part = self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
+        neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / 4 # prefer 4 neighbors over 8 neighbors
+        rank_part = 0.3 * (1 - rank / 4) # prefer higher rank
+        sheeps_part = -(0.5 * np.mean(sheeps) + 0.5 * np.var(sheeps)) / 16 # avoid sheep to be too concentrated
+        return np.mean([score_part, neighbors_part, rank_part, sheeps_part])
