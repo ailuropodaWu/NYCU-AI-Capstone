@@ -1,7 +1,5 @@
 import copy
 import numpy as np
-import utils 
-
 from game_state import GameState as BaseGameState
 
 
@@ -69,13 +67,6 @@ class GameState(BaseGameState):
         eval = 0.4 * score + 1 / rank + 0.1 * goodMoveNum 
         return eval
 
-    def getScore(self, id):
-        return self.scores[id - 1]
-
-    def getRank(self, id):
-        ranks = np.argsort(-self.scores)
-        return np.where(ranks == id - 1)[0][0] + 1
-
     def noMove(self, id):
         return len(self.agentStat[id - 1]) == 0
 
@@ -84,12 +75,6 @@ class GameState(BaseGameState):
             if not self.noMove(id):
                 return False
         return True
-
-    def _calculateScore(self):
-        for i in range(self.playerNum):
-            id = i + 1
-            connectedRegions = utils.findConnected(self, id)
-            self.scores[i] = np.round(np.sum(len(region) ** 1.25 for region in connectedRegions))
 
     def getLegalMoves(self, id):
         legalMoves = []

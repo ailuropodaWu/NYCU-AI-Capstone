@@ -2,6 +2,7 @@ import sys
 import random
 import numpy as np
 import STcpClient
+from time import time
 
 sys.path.append("../..")
 
@@ -94,13 +95,18 @@ def GetStep(playerID, mapStat, sheepStat):
     Write your code here
     """
 
-    max_iter = 100
+    max_iter = 1000
     mcts = MCTS()
     game_state = GameState(mapStat, sheepStat)
     root = SheepGame(game_state, playerID)
 
     if game_state.noMove(playerID): return [(0, 0), 0, 1]
-    for _ in range(max_iter): mcts.do_rollout(root)
+    start = time()
+    for iter in range(max_iter): 
+        mcts.do_rollout(root)
+        if time() - start > 2.8:
+            print(f'Iterations: {iter}')
+            break
 
     best_state = mcts.choose(root)
     return best_state.move
