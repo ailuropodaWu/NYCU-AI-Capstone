@@ -2,6 +2,7 @@ import STcpClient
 import numpy as np
 import random
 import copy
+
 from game_state import GameState
 
 '''
@@ -71,7 +72,7 @@ def GetStep(playerID, mapStat, sheepStat):
     
     
 
-    maxDepth = 1
+    maxDepth = 2
     def minimax(gameState: GameState, depth, id, alpha, beta):
         if depth == 0 or gameState.noMove(id):
             return gameState.evaluate(id)
@@ -209,7 +210,7 @@ def GetStep(playerID, mapStat, sheepStat):
 
 
 
-    algorithm = 'random'
+    algorithm = 'minimax'
     state = GameState(mapStat, sheepStat)
 
     if algorithm == 'minimax':
