@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import utils 
 
 
 DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
@@ -85,32 +86,8 @@ class GameState:
     def _calculateScore(self):
         for i in range(self.playerNum):
             id = i + 1
-            connectedRegions = self._findConnected(id)
+            connectedRegions = utils.findConnected(self, id)
             self.scores[i] = np.round(np.sum(len(region) ** 1.25 for region in connectedRegions))
-
-    def _findConnected(self, id):
-        visited = set()
-        connectedRegions = []
-
-        def dfs(row, col, region):
-            if row < 0 or row >= len(self.mapStat) or \
-                col < 0 or col >= len(self.mapStat[0]) or \
-                (row, col) in visited:
-                return
-            if self.mapStat[row, col] == id:
-                visited.add((row, col))
-                region.append((row, col))
-                dfs(row + 1, col, region)
-                dfs(row - 1, col, region)
-                dfs(row, col + 1, region)
-                dfs(row, col - 1, region)
-
-        for row, col in np.ndindex(self.mapStat.shape):
-            if self.mapStat[row, col] == id and (row, col) not in visited:
-                region = []
-                dfs(row, col, region)
-                connectedRegions.append(region)
-        return connectedRegions
 
     def getLegalMoves(self, id):
         legalMoves = []
