@@ -5,6 +5,7 @@ import STcpClient
 
 sys.path.append("../..")
 
+from game_state import weightedMap
 from game_state_v2 import GameState
 from mcts import MCTS, Node
 
@@ -53,18 +54,19 @@ def InitPos(mapStat):
     """
     Write your code here
     """
-    bestLegalMove = 0
-    for row, col in np.ndindex(mapStat.shape):
-        if mapStat[row][col] != 0: continue
-        if (row == 0 or row == len(mapStat) - 1 or mapStat[row+1][col] == -1 or mapStat[row-1][col] == -1) or (col == 0 or col == len(mapStat[row]) - 1 or mapStat[row][col + 1] == -1 or mapStat[row][col - 1] == -1):
-            legalMove = 0
-            for dir in DIRECTION:
-                if dir == (0, 0): continue
-                if 0 <= row + dir[0] < len(mapStat) and 0 <= col + dir[1] < len(mapStat[0]) and mapStat[row + dir[0]][col + dir[1]] == 0:
-                    if 0 in dir: legalMove += 0.5
-                    legalMove += 1
-            if legalMove > bestLegalMove:
-                bestLegalMove, init_pos = legalMove, [row, col]
+    # bestLegalMove = 0
+    # for row, col in np.ndindex(mapStat.shape):
+    #     if mapStat[row][col] != 0: continue
+    #     if (row == 0 or row == len(mapStat) - 1 or mapStat[row+1][col] == -1 or mapStat[row-1][col] == -1) or (col == 0 or col == len(mapStat[row]) - 1 or mapStat[row][col + 1] == -1 or mapStat[row][col - 1] == -1):
+    #         legalMove = 0
+    #         for dir in DIRECTION:
+    #             if dir == (0, 0): continue
+    #             if 0 <= row + dir[0] < len(mapStat) and 0 <= col + dir[1] < len(mapStat[0]) and mapStat[row + dir[0]][col + dir[1]] == 0:
+    #                 if 0 in dir: legalMove += 0.5
+    #                 legalMove += 1
+    #         if legalMove > bestLegalMove:
+    #             bestLegalMove, init_pos = legalMove, [row, col]
+    init_pos = np.unravel_index(np.argmin(weightedMap(mapStat)), mapStat.shape)
     return init_pos
 
 
