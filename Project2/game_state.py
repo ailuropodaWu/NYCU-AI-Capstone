@@ -95,6 +95,17 @@ class GameState:
         return newState
 
 
+def weightedMap(mapStat, kernel=(5, 5), weights=None):
+    kw, kh = kernel
+    weights = np.ones(kernel) if weights is None else weights
+    assert weights.shape == kernel
+    mapStat = np.array(mapStat).T
+    mapStat = np.pad(mapStat, ((kw // 2, kw // 2), (kh // 2, kh // 2)), "constant", constant_values=-1)
+    mapStat = np.abs(mapStat)
+    sub_matrices = np.lib.stride_tricks.sliding_window_view(mapStat, kernel)
+    return np.einsum("ij,klij->kl", weights, sub_matrices)
+
+
 def findConnected(gameState: GameState, id):
     visited = set()
     connectedRegions = []
