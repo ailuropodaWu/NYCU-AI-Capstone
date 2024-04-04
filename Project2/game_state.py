@@ -2,13 +2,11 @@ import copy
 import numpy as np
 import utils
 
-from game_state import GameState as BaseGameState
-
 
 DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
 
 
-class GameState(BaseGameState):
+class GameState:
     def __init__(self, _mapStat, _sheepStat, _playerNum=4):
         self.mapStat = np.asarray(_mapStat)
         self.sheep = np.asarray(_sheepStat)

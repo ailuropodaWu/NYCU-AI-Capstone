@@ -1,5 +1,7 @@
-from game_state import GameState
 import numpy as np
+
+from game_state import GameState
+
 
 def findConnected(gameState: GameState, id):
     visited = set()
