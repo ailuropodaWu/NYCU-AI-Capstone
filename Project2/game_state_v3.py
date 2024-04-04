@@ -56,16 +56,28 @@ class GameState(BaseGameState):
 
     def evaluate(self, id):
         self._calculateScore()
-        ranks = np.argsort(-self.scores)
-        legalMoves = self.getLegalMoves(id)
-        goodMoveNum = 0
-        for move in legalMoves:
-            if move[-1] % 2 == 0:
-                goodMoveNum += 1
-        score = self.scores[id - 1]
-        rank = np.where(ranks == id - 1)[0][0] + 1
-        eval = 0.4 * score + 1 / rank + 0.1 * goodMoveNum 
-        return eval
+        rank = self.getRank(id)
+        fourNeighbors, eightNeighbors = 0, 0
+        for move in self.getLegalMoves(id):
+            if move[-1] % 2 == 0: fourNeighbors += 1
+            else: eightNeighbors += 1
+        sheeps = self.sheep[self.mapStat == id]
+        score_part = 1.2 * self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
+        neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / 4 # prefer 4 neighbors over 8 neighbors
+        rank_part = 0.3 * (1 - rank / 4) # prefer higher rank
+        sheeps_part = -(0.5 * np.mean(sheeps) + 0.5 * np.var(sheeps)) / 16 # avoid sheep to be too concentrated
+        return np.mean([score_part, neighbors_part, rank_part, sheeps_part])
+        # self._calculateScore()
+        # ranks = np.argsort(-self.scores)
+        # legalMoves = self.getLegalMoves(id)
+        # goodMoveNum = 0
+        # for move in legalMoves:
+        #     if move[-1] % 2 == 0:
+        #         goodMoveNum += 1
+        # score = self.scores[id - 1]
+        # rank = np.where(ranks == id - 1)[0][0] + 1
+        # eval = 0.4 * score + 1 / rank + 0.1 * goodMoveNum 
+        # return eval
 
     def noMove(self, id):
         return len(self.agentStat[id - 1]) == 0

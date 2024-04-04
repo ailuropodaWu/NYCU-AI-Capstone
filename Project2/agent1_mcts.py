@@ -95,7 +95,7 @@ def GetStep(playerID, mapStat, sheepStat):
     Write your code here
     """
 
-    max_iter = 1000
+    max_iter = int(1e5)
     mcts = MCTS()
     game_state = GameState(mapStat, sheepStat)
     root = SheepGame(game_state, playerID)
