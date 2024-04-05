@@ -1,6 +1,9 @@
 import STcpClient
 import numpy as np
 import random
+import sys
+
+sys.path.append("../..")
 from game_state import *
 from time import time
 

@@ -3,6 +3,8 @@ import numpy as np
 import random
 import copy
 
+import sys
+sys.path.append('../..')
 from game_state import GameState
 
 '''
