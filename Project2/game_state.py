@@ -103,7 +103,7 @@ def weightedMap(mapStat, kernel=(5, 5), weights=None):
     mapStat = np.pad(mapStat, ((kw // 2, kw // 2), (kh // 2, kh // 2)), "constant", constant_values=-1)
     mapStat = np.abs(mapStat)
     sub_matrices = np.lib.stride_tricks.sliding_window_view(mapStat, kernel)
-    return np.einsum("ij,klij->kl", weights, sub_matrices)
+    return np.einsum("ij,klij->kl", weights, sub_matrices).T
 
 
 def findConnected(gameState: GameState, id):

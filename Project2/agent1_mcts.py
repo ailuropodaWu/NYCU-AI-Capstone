@@ -56,7 +56,7 @@ def InitPos(mapStat):
     """
     Write your code here
     """
-    init_pos = np.unravel_index(np.argmin(weightedMap(mapStat).T), mapStat.shape)
+    init_pos = np.unravel_index(np.argmin(weightedMap(mapStat)), mapStat.shape)
     return init_pos
 
 
