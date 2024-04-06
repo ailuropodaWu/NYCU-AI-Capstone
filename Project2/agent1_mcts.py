@@ -27,25 +27,26 @@ class SheepGame(Node):
     def __init__(self, state: GameState, playerID: int, move=None):
         super().__init__()
         self.state = state
-        self.playerID = playerID
+        self.player_num = state.playerNum
+        self.player_id = playerID
         self.children = []
         self.move = move
 
     def find_children(self):
-        return [SheepGame(self.state.getNextState(move, self.playerID), 5 - self.playerID, move) for move in self.state.getLegalMoves(self.playerID)]
+        return [SheepGame(self.state.getNextState(move, self.player_id), self.player_id, move) for move in self.state.getLegalMoves(self.player_id)]
 
     def find_random_child(self):
-        random_move = random.choice(self.state.getLegalMoves(self.playerID))
-        return SheepGame(self.state.getNextState(random_move, self.playerID), 5 - self.playerID, random_move)
+        random_move = random.choice(self.state.getLegalMoves(self.player_id))
+        return SheepGame(self.state.getNextState(random_move, self.player_id), self.player_id, random_move)
 
     def is_terminal(self):
-        return self.state.noMove(self.playerID)
+        return self.state.noMove(self.player_id)
 
     def reward(self):
-        return self.state.evaluate(self.playerID)
+        return self.state.evaluate(self.player_id)
 
     def __hash__(self):
-        return hash((self.state, self.playerID))
+        return hash((self.state, self.player_id))
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -62,7 +63,6 @@ def InitPos(mapStat):
     available[neighbors == 0] = False
     weighted_map = weightedMap(mapStat)
     weighted_map[~available] = np.inf
-    print(weighted_map.T)
     init_pos = np.unravel_index(np.argmin(weighted_map), mapStat.shape)
     return init_pos
 
@@ -100,11 +100,14 @@ def GetStep(playerID, mapStat, sheepStat):
     start = time()
     for i in range(max_iter):
         mcts.do_rollout(root)
-        if time() - start > 2.8:
-            print(f'Iterations: {i}')
-            break
+        if time() - start > 2.8: break
 
     best_state = mcts.choose(root)
+
+    print(f"Iterations: {i} times")
+    print(f"Best reward for player {playerID}: {best_state.state.evaluate(playerID):.4f}")
+    print(f"Current score: {game_state.scores[playerID - 1]}")
+
     return best_state.move
 
 

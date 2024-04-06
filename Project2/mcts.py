@@ -38,8 +38,7 @@ class MCTS:
         path = self._select(node)
         leaf = path[-1]
         self._expand(leaf)
-        reward = self._simulate(leaf)
-        self._backpropagate(path, reward)
+        self._backpropagate(path)
 
     def _select(self, node):
         "Find an unexplored descendent of `node`"
@@ -62,22 +61,11 @@ class MCTS:
             return  # already expanded
         self.children[node] = node.find_children()
 
-    def _simulate(self, node):
-        "Returns the reward for a random simulation (to completion) of `node`"
-        invert_reward = True
-        while True:
-            if node.is_terminal():
-                reward = node.reward()
-                return 1 - reward if invert_reward else reward
-            node = node.find_random_child()
-            invert_reward = not invert_reward
-
-    def _backpropagate(self, path, reward):
+    def _backpropagate(self, path):
         "Send the reward back up to the ancestors of the leaf"
         for node in reversed(path):
             self.N[node] += 1
-            self.Q[node] += reward
-            reward = 1 - reward  # 1 for me is 0 for my enemy, and vice versa
+            self.Q[node] += node.reward()
 
     def _uct_select(self, node):
         "Select a child of node, balancing exploration & exploitation"
