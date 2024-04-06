@@ -2,6 +2,7 @@ import sys
 import random
 import numpy as np
 import STcpClient
+
 from time import time
 
 sys.path.append("../..")
@@ -55,19 +56,7 @@ def InitPos(mapStat):
     """
     Write your code here
     """
-    # bestLegalMove = 0
-    # for row, col in np.ndindex(mapStat.shape):
-    #     if mapStat[row][col] != 0: continue
-    #     if (row == 0 or row == len(mapStat) - 1 or mapStat[row+1][col] == -1 or mapStat[row-1][col] == -1) or (col == 0 or col == len(mapStat[row]) - 1 or mapStat[row][col + 1] == -1 or mapStat[row][col - 1] == -1):
-    #         legalMove = 0
-    #         for dir in DIRECTION:
-    #             if dir == (0, 0): continue
-    #             if 0 <= row + dir[0] < len(mapStat) and 0 <= col + dir[1] < len(mapStat[0]) and mapStat[row + dir[0]][col + dir[1]] == 0:
-    #                 if 0 in dir: legalMove += 0.5
-    #                 legalMove += 1
-    #         if legalMove > bestLegalMove:
-    #             bestLegalMove, init_pos = legalMove, [row, col]
-    init_pos = np.unravel_index(np.argmin(weightedMap(mapStat)), mapStat.shape)
+    init_pos = np.unravel_index(np.argmin(weightedMap(mapStat).T), mapStat.shape)
     return init_pos
 
 
@@ -102,10 +91,10 @@ def GetStep(playerID, mapStat, sheepStat):
 
     if game_state.noMove(playerID): return [(0, 0), 0, 1]
     start = time()
-    for iter in range(max_iter): 
+    for i in range(max_iter):
         mcts.do_rollout(root)
         if time() - start > 2.8:
-            print(f'Iterations: {iter}')
+            print(f'Iterations: {i}')
             break
 
     best_state = mcts.choose(root)
