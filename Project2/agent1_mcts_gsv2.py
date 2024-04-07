@@ -24,26 +24,33 @@ DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1
 
 
 class SheepGame(Node):
-    def __init__(self, state: GameState, playerID: int, move=None):
+    def __init__(self, state: GameState, playerID: int, egoPlayer: int, move=None):
         super().__init__()
         self.state = state
         self.player_num = state.playerNum
         self.player_id = playerID
+        self.ego_player = egoPlayer
         self.children = []
         self.move = move
 
     def find_children(self):
-        return [SheepGame(self.state.getNextState(move, self.player_id), self.player_id, move) for move in self.state.getLegalMoves(self.player_id)]
+        next_player_id = self.player_id % self.player_num + 1
+        children = [SheepGame(self.state.getNextState(move, self.player_id), next_player_id, self.ego_player, move) for move in self.state.getLegalMoves(self.player_id)]
+        random.shuffle(children)
+        return children
 
     def find_random_child(self):
         random_move = random.choice(self.state.getLegalMoves(self.player_id))
-        return SheepGame(self.state.getNextState(random_move, self.player_id), self.player_id, random_move)
+        return SheepGame(self.state.getNextState(random_move, self.player_id), self.player_id, self.ego_player, random_move)
 
     def is_terminal(self):
-        return self.state.noMove(self.player_id)
+        return self.state.gameOver()
 
     def reward(self):
-        return self.state.evaluate(self.player_id)
+        if self.player_id == self.ego_player:
+            return self.state.evaluate(self.ego_player)
+        else:
+            return self.state.evaluate(self.player_id)
 
     def __hash__(self):
         return hash((self.state, self.player_id))
@@ -58,6 +65,7 @@ def InitPos(mapStat):
     Write your code here
     """
     mapStat = np.array(mapStat)
+    print(mapStat)
     available = mapStat == 0
     neighbors = weightedMap(mapStat, kernel=(3, 3), weights=np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]]), filling=0)
     available[neighbors == 0] = False
@@ -91,10 +99,10 @@ def GetStep(playerID, mapStat, sheepStat):
     Write your code here
     """
 
-    max_iter = int(1e5)
     mcts = MCTS()
     game_state = GameState(mapStat, sheepStat)
-    root = SheepGame(game_state, playerID)
+    root = SheepGame(game_state, playerID, playerID)
+    max_iter = int(1e5)
 
     if game_state.noMove(playerID): return [(0, 0), 0, 1]
     start = time()
@@ -111,18 +119,17 @@ def GetStep(playerID, mapStat, sheepStat):
     return best_state.move
 
 
-if __name__ == "__main__":
-    # player initial
-    (id_package, playerID, mapStat) = STcpClient.GetMap()
-    init_pos = InitPos(mapStat)
-    STcpClient.SendInitPos(id_package, init_pos)
+# player initial
+(id_package, playerID, mapStat) = STcpClient.GetMap()
+init_pos = InitPos(mapStat)
+STcpClient.SendInitPos(id_package, init_pos)
 
-    # start game
-    while (True):
-        (end_program, id_package, mapStat, sheepStat) = STcpClient.GetBoard()
-        if end_program:
-            STcpClient._StopConnect()
-            break
-        Step = GetStep(playerID, mapStat, sheepStat)
+# start game
+while (True):
+    (end_program, id_package, mapStat, sheepStat) = STcpClient.GetBoard()
+    if end_program:
+        STcpClient._StopConnect()
+        break
+    Step = GetStep(playerID, mapStat, sheepStat)
 
-        STcpClient.SendStep(id_package, Step)
+    STcpClient.SendStep(id_package, Step)
