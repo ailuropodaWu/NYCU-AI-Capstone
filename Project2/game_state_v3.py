@@ -100,6 +100,7 @@ class GameState(BaseGameState):
             if pos in self.legalMove.keys():
                 for dir_i in self.legalMove[pos]:
                     legalMoves.append([pos, split, dir_i])
+                    # legalMoves.extend([[pos, split, dir_i] for split in range(1, int(self.sheep[pos[0], pos[1]]))])
             else:
                 raise("Key error")
         return legalMoves

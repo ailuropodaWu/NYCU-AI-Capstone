@@ -8,7 +8,7 @@ from time import time
 sys.path.append("../..")
 
 from game_state import weightedMap
-from game_state_v2 import GameState
+from game_state_v3 import GameState
 from mcts import MCTS, Node
 
 
@@ -48,7 +48,7 @@ class SheepGame(Node):
         if self.player_id == self.ego_player:
             return self.state.evaluate(self.ego_player)
         else:
-            return self.state.evaluate(self.ego_player) - self.state.evaluate(self.player_id)
+            return self.state.evaluate(self.player_id)
 
     def __hash__(self):
         return hash((self.state, self.player_id))
@@ -63,6 +63,7 @@ def InitPos(mapStat):
     Write your code here
     """
     mapStat = np.array(mapStat)
+    print(mapStat)
     available = mapStat == 0
     neighbors = weightedMap(mapStat, kernel=(3, 3), weights=np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]]), filling=0)
     available[neighbors == 0] = False
@@ -96,12 +97,13 @@ def GetStep(playerID, mapStat, sheepStat):
     Write your code here
     """
 
-    max_iter = int(1e5)
     mcts = MCTS()
     game_state = GameState(mapStat, sheepStat)
     root = SheepGame(game_state, playerID, playerID)
+    max_iter = int(1e5)
 
     if game_state.noMove(playerID): return [(0, 0), 0, 1]
+    print("start mcts")
     start = time()
     for i in range(max_iter):
         mcts.do_rollout(root)
@@ -116,18 +118,17 @@ def GetStep(playerID, mapStat, sheepStat):
     return best_state.move
 
 
-if __name__ == "__main__":
-    # player initial
-    (id_package, playerID, mapStat) = STcpClient.GetMap()
-    init_pos = InitPos(mapStat)
-    STcpClient.SendInitPos(id_package, init_pos)
+# player initial
+(id_package, playerID, mapStat) = STcpClient.GetMap()
+init_pos = InitPos(mapStat)
+STcpClient.SendInitPos(id_package, init_pos)
 
-    # start game
-    while (True):
-        (end_program, id_package, mapStat, sheepStat) = STcpClient.GetBoard()
-        if end_program:
-            STcpClient._StopConnect()
-            break
-        Step = GetStep(playerID, mapStat, sheepStat)
+# start game
+while (True):
+    (end_program, id_package, mapStat, sheepStat) = STcpClient.GetBoard()
+    if end_program:
+        STcpClient._StopConnect()
+        break
+    Step = GetStep(playerID, mapStat, sheepStat)
 
-        STcpClient.SendStep(id_package, Step)
+    STcpClient.SendStep(id_package, Step)

@@ -65,7 +65,7 @@ class MCTS:
         "Send the reward back up to the ancestors of the leaf"
         for node in reversed(path):
             self.N[node] += 1
-            self.Q[node] += node.reward()
+            self.Q[node] += node.reward() if node.player_id == node.ego_player else node.state.evaluate(node.ego_player) - node.reward()
 
     def _uct_select(self, node):
         "Select a child of node, balancing exploration & exploitation"
