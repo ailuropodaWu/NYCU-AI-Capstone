@@ -62,10 +62,10 @@ class GameState(BaseGameState):
             if move[-1] % 2 == 0: fourNeighbors += 1
             else: eightNeighbors += 1
         sheeps = self.sheep[self.mapStat == id]
-        score_part = 1.5 * self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
-        neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / 4 # prefer 4 neighbors over 8 neighbors
-        rank_part = 1.3 * (1 - rank / 4) # prefer higher rank
-        sheeps_part = -(0.5 * np.mean(sheeps) + 0.5 * np.var(sheeps)) / 16 # avoid sheep to be too concentrated
+        score_part = self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
+        neighbors_part = fourNeighbors / 4 # prefer 4 neighbors over 8 neighbors
+        rank_part = (1 - rank / 4) # prefer higher rank
+        sheeps_part = -(0.5 * np.mean(sheeps) / 16 + 0.5 * np.var(sheeps) / 98) # avoid sheep to be too concentrated
         return np.mean([score_part, neighbors_part, rank_part, sheeps_part])
         # self._calculateScore()
         # ranks = np.argsort(-self.scores)

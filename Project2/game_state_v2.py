@@ -32,8 +32,8 @@ class GameState(BaseGameState):
         score_part = self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
         neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / 4 # prefer 4 neighbors over 8 neighbors
         rank_part = 1 - rank / 4 # prefer higher rank
-        sheeps_part = -(0.5 * np.mean(sheeps) + 0.5 * np.var(sheeps)) / 16 # avoid sheep to be too concentrated
-        return np.dot([connected_part, score_part, neighbors_part, rank_part, sheeps_part], [0.3, 0.3, 0.1, 0.1, 0.2])
+        sheeps_part = -(0.5 * np.max(sheeps) / 16) # avoid sheep to be too concentrated
+        return np.dot([connected_part, score_part, neighbors_part, rank_part, sheeps_part], [0.2, 0.2, 0.2, 0.2, 0.2])
 
     # def getLegalMoves(self, id):
     #     legalMoves = []
