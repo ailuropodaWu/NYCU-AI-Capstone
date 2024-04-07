@@ -35,16 +35,16 @@ class GameState(BaseGameState):
         sheeps_part = -(0.5 * np.mean(sheeps) + 0.5 * np.var(sheeps)) / 16 # avoid sheep to be too concentrated
         return np.dot([connected_part, score_part, neighbors_part, rank_part, sheeps_part], [0.3, 0.3, 0.1, 0.1, 0.2])
 
-    def getLegalMoves(self, id):
-        legalMoves = []
-        for row, col in np.ndindex(self.mapStat.shape):
-            # Select cells with more than one sheep
-            if self.mapStat[row, col] != id or self.sheep[row, col] <= 1: continue
-            for dir_i, dir in enumerate(DIRECTION):
-                if dir_i == 4: continue
-                if 0 <= row + dir[0] < len(self.mapStat) and \
-                    0 <= col + dir[1] < len(self.mapStat[0]) and \
-                    self.mapStat[row+dir[0], col+dir[1]] == 0:
-                    # only consider half split
-                    legalMoves.extend([[(row, col), sheep_num, dir_i + 1] for sheep_num in range(1, int(self.sheep[row, col]))])
-        return legalMoves
+    # def getLegalMoves(self, id):
+    #     legalMoves = []
+    #     for row, col in np.ndindex(self.mapStat.shape):
+    #         # Select cells with more than one sheep
+    #         if self.mapStat[row, col] != id or self.sheep[row, col] <= 1: continue
+    #         for dir_i, dir in enumerate(DIRECTION):
+    #             if dir_i == 4: continue
+    #             if 0 <= row + dir[0] < len(self.mapStat) and \
+    #                 0 <= col + dir[1] < len(self.mapStat[0]) and \
+    #                 self.mapStat[row+dir[0], col+dir[1]] == 0:
+    #                 # only consider half split
+    #                 legalMoves.extend([[(row, col), sheep_num, dir_i + 1] for sheep_num in range(1, int(self.sheep[row, col]))])
+    #     return legalMoves
