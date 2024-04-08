@@ -161,3 +161,14 @@ class GameState(BaseGameState):
                                 newState.agentStat[neighbor_id - 1].remove(state)
                                 break
         return newState
+
+class EndGameState(GameState):
+    def __init__(self, _mapStat, _sheepStat, _playerNum=4):
+        super().__init__(_mapStat, _sheepStat, _playerNum)
+        print("End Game State")
+    def evaluate(self, id):
+        self._calculateScore()
+        rank = self.getRank(id)
+        score_part = self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
+        rank_part = (1 - rank / 4) # prefer higher rank
+        return np.mean([score_part, rank_part])

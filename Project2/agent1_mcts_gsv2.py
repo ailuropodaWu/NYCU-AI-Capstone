@@ -7,8 +7,8 @@ from time import time
 
 sys.path.append("../..")
 
-from game_state import weightedMap
-from game_state_v2 import GameState
+from game_state import weightedMap, endGameState
+from game_state_v2 import GameState, EndGameState
 from mcts import MCTS, Node
 
 
@@ -100,7 +100,7 @@ def GetStep(playerID, mapStat, sheepStat):
     """
 
     mcts = MCTS()
-    game_state = GameState(mapStat, sheepStat)
+    game_state = GameState(mapStat, sheepStat) if not endGameState(mapStat) else EndGameState(mapStat, sheepStat)
     root = SheepGame(game_state, playerID, playerID)
     max_iter = int(1e5)
 

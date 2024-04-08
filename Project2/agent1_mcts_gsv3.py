@@ -7,8 +7,8 @@ from time import time
 
 sys.path.append("../..")
 
-from game_state import weightedMap
-from game_state_v3 import GameState
+from game_state import weightedMap, endGameState
+from game_state_v3 import GameState, EndGameState
 from mcts import MCTS, Node
 
 
@@ -24,7 +24,7 @@ DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1
 
 
 class SheepGame(Node):
-    def __init__(self, state: GameState, playerID: int, egoPlayer: int, move=None):
+    def __init__(self, state, playerID: int, egoPlayer: int, move=None):
         super().__init__()
         self.state = state
         self.player_num = state.playerNum
@@ -91,14 +91,13 @@ Step : 3 elements, [(x,y), m, dir]
         4 X 6
         7 8 9
 """
-
 def GetStep(playerID, mapStat, sheepStat):
     """
     Write your code here
     """
 
     mcts = MCTS()
-    game_state = GameState(mapStat, sheepStat)
+    game_state = GameState(mapStat, sheepStat) if not endGameState(mapStat) else EndGameState(mapStat, sheepStat)
     root = SheepGame(game_state, playerID, playerID)
     max_iter = int(1e5)
 

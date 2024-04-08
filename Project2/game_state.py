@@ -129,3 +129,14 @@ def findConnected(gameState: GameState, id):
             dfs(row, col, region)
             connectedRegions.append(region)
     return connectedRegions
+
+def endGameState(mapStat):
+    mapStat = np.array(mapStat)
+    totalSpace = 0
+    occupiedSpace = 0
+    for row, col in np.ndindex(mapStat.shape):
+        if mapStat[row, col] >= 0:
+            totalSpace += 1
+            if mapStat[row, col] > 0:
+                occupiedSpace += 1
+    return occupiedSpace > 0.6 * totalSpace
