@@ -47,10 +47,7 @@ class SheepGame(Node):
         return self.state.gameOver()
 
     def reward(self):
-        if self.player_id == self.ego_player:
-            return self.state.evaluate(self.ego_player)
-        else:
-            return self.state.evaluate(self.player_id)
+        return self.state.evaluate(self.player_id)
 
     def __hash__(self):
         return hash((self.state, self.player_id))
@@ -115,7 +112,7 @@ def GetStep(playerID, mapStat, sheepStat):
 
     print(f"Iterations: {i} times")
     print(f"Best reward for player {playerID}: {best_state.state.evaluate(playerID):.4f}")
-    print(f"Current score: {game_state.scores[playerID - 1]}")
+    print(f"Current score: {game_state.scores[playerID - 1]:.4f}")
 
     return best_state.move
 
