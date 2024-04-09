@@ -22,7 +22,8 @@ class GameState(BaseGameState):
         self._calculateScore()
         rank = self.getRank(id)
         fourNeighbors, eightNeighbors = 0, 0
-        for move in self.getLegalMoves(id):
+        legalMoves = self.getLegalMoves(id)
+        for move in legalMoves:
             if move[-1] % 2 == 0: fourNeighbors += 1
             else: eightNeighbors += 1
         sheeps = self.sheep[self.mapStat == id]
@@ -30,7 +31,7 @@ class GameState(BaseGameState):
         # area_part = -(0.5 * (boundingBox[1] - boundingBox[0] + 1) * (boundingBox[3] - boundingBox[2] + 1) / 144) # avoid area too large
         connected_part = np.max([len(r) for r in findConnected(self, id)]) / self.maxSheep # prefer large connected regions
         score_part = self.scores[id - 1] / (self.maxSheep ** 1.25) # 16 ^ 1.25 = 32
-        neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / 4 # prefer 4 neighbors over 8 neighbors
+        neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / (4 * len(legalMoves)) if len(legalMoves) else 0 # prefer 4 neighbors over 8 neighbors
         rank_part = 1 - rank / 4 # prefer higher rank
         sheeps_part = -(0.5 * np.max(sheeps) / self.maxSheep) # avoid sheep to be too concentrated
         return np.dot([connected_part, score_part, neighbors_part, rank_part, sheeps_part], [0.2, 0.2, 0.2, 0.2, 0.2])
