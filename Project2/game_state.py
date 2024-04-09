@@ -6,11 +6,12 @@ DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1
 
 
 class GameState:
-    def __init__(self, _mapStat, _sheepStat, _playerNum=4):
+    def __init__(self, _mapStat, _sheepStat, _maxSheep=32, _playerNum=4):
         self.mapStat = np.asarray(_mapStat)
         self.sheep = np.asarray(_sheepStat)
         self.scores = np.zeros((_playerNum,))
         self.playerNum = _playerNum
+        self.maxSheep = _maxSheep
 
     def evaluate(self, id):
         id -= 1
@@ -54,7 +55,7 @@ class GameState:
         for i in range(self.playerNum):
             id = i + 1
             connectedRegions = findConnected(self, id)
-            self.scores[i] = np.round(np.sum(len(region) ** 1.25 for region in connectedRegions))
+            self.scores[i] = np.sum(len(region) ** 1.25 for region in connectedRegions)
             
     def getLegalMoves(self, id):
         legalMoves = []

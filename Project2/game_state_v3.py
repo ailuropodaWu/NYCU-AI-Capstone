@@ -7,11 +7,8 @@ DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1
 
 
 class GameState(BaseGameState):
-    def __init__(self, _mapStat, _sheepStat, _playerNum=4):
-        self.mapStat = np.asarray(_mapStat)
-        self.sheep = np.asarray(_sheepStat)
-        self.scores = np.zeros((_playerNum,))
-        self.playerNum = _playerNum
+    def __init__(self, _mapStat, _sheepStat, _maxSheep, _playerNum=4):
+        super().__init__(_mapStat, _sheepStat, _maxSheep, _playerNum)
         self._getAgentState()
         
 
@@ -58,26 +55,16 @@ class GameState(BaseGameState):
         self._calculateScore()
         rank = self.getRank(id)
         fourNeighbors, eightNeighbors = 0, 0
-        for move in self.getLegalMoves(id):
+        legalMoves = self.getLegalMoves(id)
+        for move in legalMoves:
             if move[-1] % 2 == 0: fourNeighbors += 1
             else: eightNeighbors += 1
         sheeps = self.sheep[self.mapStat == id]
-        score_part = self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
-        neighbors_part = fourNeighbors / 4 # prefer 4 neighbors over 8 neighbors
+        score_part = self.scores[id - 1] / (self.maxSheep ** 1.25) # 16 ^ 1.25 = 32
+        neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / (4 * len(legalMoves)) if len(legalMoves) else 0 # prefer 4 neighbors over 8 neighbors
         rank_part = (1 - rank / 4) # prefer higher rank
-        sheeps_part = -(0.5 * np.mean(sheeps) / 16 + 0.5 * np.var(sheeps) / 98) # avoid sheep to be too concentrated
-        return np.mean([score_part, neighbors_part, rank_part, sheeps_part])
-        # self._calculateScore()
-        # ranks = np.argsort(-self.scores)
-        # legalMoves = self.getLegalMoves(id)
-        # goodMoveNum = 0
-        # for move in legalMoves:
-        #     if move[-1] % 2 == 0:
-        #         goodMoveNum += 1
-        # score = self.scores[id - 1]
-        # rank = np.where(ranks == id - 1)[0][0] + 1
-        # eval = 0.4 * score + 1 / rank + 0.1 * goodMoveNum 
-        # return eval
+        sheeps_part = 1 - (0.5 * np.mean(sheeps) / self.maxSheep + 0.5 * np.var(sheeps) / ((self.maxSheep ** 2) / 2)) # avoid sheep to be too concentrated
+        return np.dot([score_part, neighbors_part, rank_part, sheeps_part], [0.3, 0.5, 0.1, 0.1])
 
     def noMove(self, id):
         return len(self.agentStat[id - 1]) == 0
@@ -100,7 +87,6 @@ class GameState(BaseGameState):
             if pos in self.legalMove.keys():
                 for dir_i in self.legalMove[pos]:
                     legalMoves.append([pos, split, dir_i])
-                    # legalMoves.extend([[pos, split, dir_i] for split in range(1, int(self.sheep[pos[0], pos[1]]))])
             else:
                 raise("Key error")
         return legalMoves
@@ -163,12 +149,28 @@ class GameState(BaseGameState):
         return newState
 
 class EndGameState(GameState):
-    def __init__(self, _mapStat, _sheepStat, _playerNum=4):
-        super().__init__(_mapStat, _sheepStat, _playerNum)
+    def __init__(self, _mapStat, _sheepStat, _maxSheep, _playerNum=4):
+        super().__init__(_mapStat, _sheepStat, _maxSheep, _playerNum)
         print("End Game State")
+
     def evaluate(self, id):
         self._calculateScore()
         rank = self.getRank(id)
-        score_part = self.scores[id - 1] / 32 # 16 ^ 1.25 = 32
-        rank_part = (1 - rank / 4) # prefer higher rank
-        return np.mean([score_part, rank_part])
+        score_part = self.scores[id - 1]
+        return score_part
+    
+    # def getLegalMoves(self, id):
+    #     legalMoves = []
+
+    #     for state in self.agentStat[id - 1]:
+    #         if state[1] <= 1:
+    #             continue
+    #         pos = state[0]
+    #         row, col = pos
+    #         split = int(self.sheep[row, col] // 2)
+    #         if pos in self.legalMove.keys():
+    #             for dir_i in self.legalMove[pos]:
+    #                 legalMoves.extend([[pos, split, dir_i] for split in range(1, int(self.sheep[pos[0], pos[1]]))])
+    #         else:
+    #             raise("Key error")
+    #     return legalMoves
