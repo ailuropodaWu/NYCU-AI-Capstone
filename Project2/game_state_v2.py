@@ -21,22 +21,17 @@ class GameState(BaseGameState):
     def evaluate(self, id):
         self._calculateScore()
         rank = self.getRank(id)
-        fourNeighbors, eightNeighbors = 0, 0
-        legalMoves = self.getLegalMoves(id)
-        for move in legalMoves:
-            if move[-1] % 2 == 0: fourNeighbors += 1
-            else: eightNeighbors += 1
         sheeps = self.sheep[self.mapStat == id]
         score_part = self.scores[id - 1] / (self.maxSheep ** 1.25) # 16 ^ 1.25 = 32
-        neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / (4 * len(legalMoves)) if len(legalMoves) else 0 # prefer 4 neighbors over 8 neighbors
         rank_part = 1 - rank / 4 # prefer higher rank
-        sheeps_part = (-np.mean(sheeps) - 1) / (self.maxSheep - 1) # avoid sheep to be too concentrated
+        sheeps_part = (-np.max(sheeps) - 1) / (self.maxSheep - 1) # avoid sheep to be too concentrated
         mapStat = self.mapStat.copy()
-        mapStat[mapStat == id] = self.sheep[mapStat == id] - 1
+        mapStat[mapStat > 0] = -1
+        mapStat[self.mapStat == id] = self.sheep[self.mapStat == id]
         space_part = -weightedMap(mapStat, kernel=(3, 3), weights=np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]) / 9)[self.mapStat == id].mean() / 24 # avoid too many obstacles around, 24 = 16 + 8
-        rewards = np.asarray([score_part, neighbors_part, rank_part, sheeps_part, space_part])
+        rewards = np.asarray([score_part, rank_part, sheeps_part, space_part])
         rewards /= np.linalg.norm(rewards)
-        return np.dot(rewards, [0.2, 0.2, 0.2, 0.2, 0.2])
+        return np.dot(rewards, np.ones((4,)) / 4)
 
     def getLegalMoves(self, id):
         legalMoves = []
