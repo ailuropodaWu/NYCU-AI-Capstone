@@ -62,13 +62,13 @@ def InitPos(mapStat):
     Write your code here
     """
     mapStat = np.array(mapStat)
-    print(mapStat)
     available = mapStat == 0
-    neighbors = weightedMap(mapStat, kernel=(3, 3), weights=np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]]), filling=0)
+    neighbors = weightedMap(mapStat, kernel=(3, 3), weights=np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]]), filling=0)
     available[neighbors == 0] = False
     weighted_map = weightedMap(mapStat)
     weighted_map[~available] = np.inf
     init_pos = np.unravel_index(np.argmin(weighted_map), mapStat.shape)
+    print(weighted_map)
     return init_pos
 
 
