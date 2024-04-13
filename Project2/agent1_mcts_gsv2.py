@@ -111,7 +111,6 @@ def GetStep(playerID, mapStat, sheepStat):
     best_state = mcts.choose(root)
 
     print(f"Iterations: {i} times")
-    print(f"Best reward for player {playerID}: {best_state.state.evaluate(playerID):.4f}")
     print(f"Current score: {game_state.scores[playerID - 1]:.4f}")
 
     return best_state.move
