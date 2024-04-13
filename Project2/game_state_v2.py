@@ -1,6 +1,6 @@
 import numpy as np
 
-from game_state import GameState as BaseGameState, findConnected
+from game_state import GameState as BaseGameState, findConnected, weightedMap
 
 
 DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
@@ -30,8 +30,13 @@ class GameState(BaseGameState):
         score_part = self.scores[id - 1] / (self.maxSheep ** 1.25) # 16 ^ 1.25 = 32
         neighbors_part = (0.7 * fourNeighbors + 0.3 * eightNeighbors) / (4 * len(legalMoves)) if len(legalMoves) else 0 # prefer 4 neighbors over 8 neighbors
         rank_part = 1 - rank / 4 # prefer higher rank
-        sheeps_part = -(0.5 * np.max(sheeps) / self.maxSheep) # avoid sheep to be too concentrated
-        return np.dot([score_part, neighbors_part, rank_part, sheeps_part], [0.2, 0.2, 0.2, 0.2])
+        sheeps_part = (-np.mean(sheeps) - 1) / (self.maxSheep - 1) # avoid sheep to be too concentrated
+        mapStat = self.mapStat.copy()
+        mapStat[mapStat == id] = self.sheep[mapStat == id] - 1
+        space_part = -weightedMap(mapStat, kernel=(3, 3), weights=np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]) / 9)[self.mapStat == id].mean() / 24 # avoid too many obstacles around, 24 = 16 + 8
+        rewards = np.asarray([score_part, neighbors_part, rank_part, sheeps_part, space_part])
+        rewards /= np.linalg.norm(rewards)
+        return np.dot(rewards, [0.2, 0.2, 0.2, 0.2, 0.2])
 
     def getLegalMoves(self, id):
         legalMoves = []
