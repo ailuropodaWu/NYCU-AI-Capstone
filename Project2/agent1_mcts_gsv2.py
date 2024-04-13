@@ -40,8 +40,9 @@ class SheepGame(Node):
         return children
 
     def find_random_child(self):
+        next_player_id = self.player_id % self.player_num + 1
         random_move = random.choice(self.state.getLegalMoves(self.player_id))
-        return SheepGame(self.state.getNextState(random_move, self.player_id), self.player_id, self.ego_player, random_move)
+        return SheepGame(self.state.getNextState(random_move, self.player_id), next_player_id, self.ego_player, random_move)
 
     def is_terminal(self):
         return self.state.gameOver()
