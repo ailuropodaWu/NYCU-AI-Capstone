@@ -1,3 +1,10 @@
+"""
+Team ID: 25
+Team name: Whatever
+Team members: 110550036 張家維, 110550014 吳權祐, 110550100 廖奕瑋
+"""
+
+
 import sys
 import random
 import numpy as np
