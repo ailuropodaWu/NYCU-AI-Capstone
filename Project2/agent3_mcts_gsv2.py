@@ -7,8 +7,8 @@ from time import time
 
 sys.path.append("../..")
 
-from game_state import weightedMap, endGameState
-from game_state_v2_agent3 import GameState, EndGameState
+from game_state import weightedMap
+from game_state_v2 import BaseGameState
 from mcts import MCTS, Node
 
 
@@ -23,8 +23,18 @@ init_pos=[x,y],代表起始位置
 DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
 
 
+class GameState(BaseGameState):
+    def __init__(self, _mapStat, _sheepStat, _maxSheep, _playerNum=4):
+        super().__init__(_mapStat, _sheepStat, _maxSheep, _playerNum)
+
+    def guessSheepStat(self, playerID, round, agent_step):
+        for id in range(4):
+            if id + 1 == playerID: continue
+            self.sheep[self.mapStat == id + 1] = int(self.maxSheep / len(agent_step[id]))
+
+
 class SheepGame(Node):
-    def __init__(self, state, playerID: int, egoPlayer: int, move=None):
+    def __init__(self, state: GameState, playerID: int, egoPlayer: int, move=None):
         super().__init__()
         self.state = state
         self.player_num = state.playerNum
@@ -38,19 +48,17 @@ class SheepGame(Node):
         children = [SheepGame(self.state.getNextState(move, self.player_id), next_player_id, self.ego_player, move) for move in self.state.getLegalMoves(self.player_id)]
         random.shuffle(children)
         return children
-    
+
     def find_random_child(self):
+        next_player_id = self.player_id % self.player_num + 1
         random_move = random.choice(self.state.getLegalMoves(self.player_id))
-        return SheepGame(self.state.getNextState(random_move, self.player_id), self.player_id, self.ego_player, random_move)
+        return SheepGame(self.state.getNextState(random_move, self.player_id), next_player_id, self.ego_player, random_move)
 
     def is_terminal(self):
         return self.state.gameOver()
 
     def reward(self):
-        if self.player_id == self.ego_player:
-            return self.state.evaluate(self.ego_player)
-        else:
-            return self.state.evaluate(self.player_id)
+        return self.state.evaluate(self.player_id)
 
     def __hash__(self):
         return hash((self.state, self.player_id))
@@ -114,13 +122,13 @@ def GetStep(playerID, mapStat, sheepStat):
         if (row, col) not in AGENT_STEP[id]:
             AGENT_STEP[id].append((row, col))
 
-    game_state = GameState(mapStat, sheepStat, maxSheep) if not endGameState(mapStat) else EndGameState(mapStat, sheepStat, maxSheep)
+    game_state = GameState(mapStat, sheepStat, maxSheep)
     game_state.guessSheepStat(playerID, ROUND, AGENT_STEP)
     root = SheepGame(game_state, playerID, playerID)
     max_iter = int(1e5)
 
     if game_state.noMove(playerID): return [(0, 0), 0, 1]
-    print("start mcts")
+
     start = time()
     for i in range(max_iter):
         mcts.do_rollout(root)
@@ -129,8 +137,7 @@ def GetStep(playerID, mapStat, sheepStat):
     best_state = mcts.choose(root)
 
     print(f"Iterations: {i} times")
-    print(f"Best reward for player {playerID}: {best_state.state.evaluate(playerID):.4f}")
-    print(f"Current score: {game_state.scores[playerID - 1]}")
+    print(f"Current score: {game_state.scores[playerID - 1]:.4f}")
 
     return best_state.move
 
@@ -149,4 +156,3 @@ while (True):
     Step = GetStep(playerID, mapStat, sheepStat)
 
     STcpClient.SendStep(id_package, Step)
-
