@@ -95,7 +95,7 @@ class MCTS:
         reward = path[-1].reward()
         for node in reversed(path):
             self.N[node] += 1
-            self.Q[node] += reward if node.player_id == node.ego_player else ego_reward - reward
+            self.Q[node] += reward if node.player_id % 2 == node.ego_player % 2 else ego_reward - reward
 
     def _uct_select(self, node):
         "Select a child of node, balancing exploration & exploitation"

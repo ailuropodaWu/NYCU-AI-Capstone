@@ -9,6 +9,10 @@ import sys
 import random
 import numpy as np
 import STcpClient
+import copy
+from abc import ABC, abstractmethod
+from collections import defaultdict
+import math
 
 from time import time
 
@@ -32,9 +36,6 @@ Luke Harold Miles, July 2019, Public Domain Dedication
 See also https://en.wikipedia.org/wiki/Monte_Carlo_tree_search
 https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
 """
-from abc import ABC, abstractmethod
-from collections import defaultdict
-import math
 
 
 class MCTS:
@@ -183,12 +184,6 @@ class SheepGame(Node):
 
     def __eq__(self, other):
         return hash(self) == hash(other)
-
-import copy
-import numpy as np
-
-
-DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
 
 
 class BaseGameState:

@@ -8,7 +8,12 @@ Team members: 110550036 張家維, 110550014 吳權祐, 110550100 廖奕瑋
 import sys
 import random
 import numpy as np
+import copy
 import STcpClient
+from abc import ABC, abstractmethod
+from collections import defaultdict
+import math
+
 
 from time import time
 
@@ -32,10 +37,6 @@ Luke Harold Miles, July 2019, Public Domain Dedication
 See also https://en.wikipedia.org/wiki/Monte_Carlo_tree_search
 https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
 """
-from abc import ABC, abstractmethod
-from collections import defaultdict
-import math
-
 
 class MCTS:
     "Monte Carlo tree searcher. First rollout the tree then choose a move."
@@ -183,13 +184,6 @@ class SheepGame(Node):
 
     def __eq__(self, other):
         return hash(self) == hash(other)
-
-import copy
-import numpy as np
-
-
-DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
-
 
 class BaseGameState:
     def __init__(self, _mapStat, _sheepStat, _maxSheep=32, _playerNum=4):
