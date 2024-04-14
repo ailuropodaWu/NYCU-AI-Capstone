@@ -25,13 +25,10 @@ class GameState(BaseGameState):
         score_part = self.scores[id - 1] / (self.maxSheep ** 1.25) # 16 ^ 1.25 = 32
         rank_part = 1 - rank / 4 # prefer higher rank
         sheeps_part = (-np.max(sheeps) - 1) / (self.maxSheep - 1) # avoid sheep to be too concentrated
-        mapStat = self.mapStat.copy()
-        mapStat[mapStat > 0] = -1
-        mapStat[self.mapStat == id] = self.sheep[self.mapStat == id]
-        space_part = -weightedMap(mapStat, kernel=(3, 3), weights=np.ones((3, 3)) / 9)[self.mapStat == id].mean() / 24 # avoid too many obstacles around, 24 = 16 + 8
-        rewards = np.asarray([score_part, rank_part, sheeps_part, space_part])
+        moves_part = len(self.getLegalMoves(id)) / (np.count_nonzero(self.sheep[self.mapStat == id] - 1) * 8 + 1) # prefer more legal moves
+        rewards = np.asarray([score_part, rank_part, sheeps_part, moves_part])
         rewards /= np.linalg.norm(rewards)
-        return np.dot(rewards, [0.2, 0.2, 0.2, 0.4])
+        return np.dot(rewards, np.ones(4) / 4)
 
     def getLegalMoves(self, id):
         legalMoves = []
