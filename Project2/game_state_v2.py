@@ -1,6 +1,6 @@
 import numpy as np
 
-from game_state import GameState as BaseGameState, findConnected, weightedMap
+from game_state import GameState as BaseGameState, weightedMap
 
 
 DIRECTION = ((-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
@@ -28,10 +28,10 @@ class GameState(BaseGameState):
         mapStat = self.mapStat.copy()
         mapStat[mapStat > 0] = -1
         mapStat[self.mapStat == id] = self.sheep[self.mapStat == id]
-        space_part = -weightedMap(mapStat, kernel=(3, 3), weights=np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]) / 9)[self.mapStat == id].mean() / 24 # avoid too many obstacles around, 24 = 16 + 8
+        space_part = -weightedMap(mapStat, kernel=(3, 3), weights=np.ones((3, 3)) / 9)[self.mapStat == id].mean() / 24 # avoid too many obstacles around, 24 = 16 + 8
         rewards = np.asarray([score_part, rank_part, sheeps_part, space_part])
         rewards /= np.linalg.norm(rewards)
-        return np.dot(rewards, np.ones((4,)) / 4)
+        return np.dot(rewards, [0.2, 0.2, 0.2, 0.4])
 
     def getLegalMoves(self, id):
         legalMoves = []
