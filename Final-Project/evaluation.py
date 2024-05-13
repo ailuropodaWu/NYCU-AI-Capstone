@@ -1,9 +1,19 @@
 from argparse import ArgumentParser
 from similarity import *
-from visualize_result import *
 import os
 import json
+from scipy.stats import pearsonr, spearmanr
 
+def evaluation(prediction_path):
+    def rmse(score, pred):
+        return np.sqrt(np.sum(np.square(score - pred)) / score.size)
+    df = pd.read_json(prediction_path)
+    score = df['score']
+    cos_sim = df['cos-sim']
+    tfidf_cos = df['tfidf-cos']
+    print(pearsonr(score, cos_sim), spearmanr(score, cos_sim))
+    print(pearsonr(tfidf_cos, cos_sim), spearmanr(tfidf_cos, cos_sim))
+    
 def main():
     parser = ArgumentParser()
     parser.add_argument('--model', type=str, help="Choose the directory of the model")

@@ -34,13 +34,13 @@ def get_embedding(save_path="embedding_dict.json", use_saved=True):
         batch_cnt += 1
         if batch_cnt == batch_size:
             batch_cnt = 0
-            embeddings = vo.embed(batch, "voyage-2", input_type="document").embeddings
+            embeddings = vo.embed(batch, "voyage-large-2-instruct", input_type="document").embeddings
             for s in batch:
                 embedding_dict[s] = embeddings[embedding_dict[s]]
             batch = []
             time.sleep(0.1)
     if len(batch) > 0:
-        embeddings = vo.embed(batch, "voyage-2", input_type="document").embeddings
+        embeddings = vo.embed(batch, "voyage-large-2-instruct", input_type="document").embeddings
         for s in batch:
             embedding_dict[s] = embeddings[embedding_dict[s]]
     with open(save_path, "w") as fp:
