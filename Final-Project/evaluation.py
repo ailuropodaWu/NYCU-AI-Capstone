@@ -18,7 +18,7 @@ def main():
     with open(embed_path, "r") as fp:
         embedding_dict = json.load(fp)
     semantic_similarity(embedding_dict, model, score_type, analyze)
-    visualize(pred_path)
+    evaluation(pred_path)
     
     
 if __name__ == '__main__':

@@ -27,7 +27,7 @@ def semantic_similarity(embedding_dict, model, score_type='linear', analyze=Fals
         similarity = cosine_similarity([embedding_dict[sen1]], [embedding_dict[sen2]]).flatten()
         similarity_list.append(similarity)
         pred = list(row.values)
-        pred.append(cosine2score(similarity[0], score_type))
+        pred.append(similarity[0])
         predictions.append(pred)
     if analyze:
         similarity_list = np.array(similarity_list)
@@ -38,9 +38,7 @@ def semantic_similarity(embedding_dict, model, score_type='linear', analyze=Fals
         plt.bar(x, h)
         plt.show()
         
-    columns = df.columns
-    columns.append("simiarity")
-    predictions = pd.DataFrame(predictions, columns=columns)
+    predictions = pd.DataFrame(predictions, columns=["sentence1", "sentence2", "score", "tfidf-cos", "cos-sim"])
     print(predictions)
     predictions.to_json(pred_path, orient="records")
     return predictions
