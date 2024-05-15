@@ -8,8 +8,8 @@ import pytorch_lightning as pl
 
 from datasets import load_dataset
 from torch.utils.data import DataLoader
+from torchmetrics.functional.regression import spearman_corrcoef
 from llama_cpp import Llama
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 torch.set_float32_matmul_precision("medium")
@@ -17,11 +17,11 @@ torch.set_float32_matmul_precision("medium")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-n_ctx = 1024
+n_ctx = 512
 
-max_epochs = 4
+max_epochs = 3
 batch_size = 4
-learning_rate = 1e-3
+learning_rate = 1e-5
 
 
 class LLMEmbedding(pl.LightningModule):
@@ -36,12 +36,14 @@ class LLMEmbedding(pl.LightningModule):
             nn.Linear(512, 256),
             nn.ReLU()
         )
+        self.scores = []
+        self.similarities = []
         # self.save_hyperparameters()
 
     def forward(self, input: str):
-        embeddings = torch.zeros((batch_size, n_ctx, 4096), device=device)
+        embeddings = torch.zeros((batch_size, n_ctx, 4096), device=device, dtype=torch.float32)
         for i, sentence in enumerate(input):
-            e = torch.tensor(self.llm.embed(sentence), device=device)
+            e = torch.tensor(self.llm.embed(sentence), device=device, dtype=torch.float32, requires_grad=True)
             embeddings[i] += F.pad(e, (0, 0, 0, n_ctx - e.shape[0]))
         embeddings = self.seq(embeddings).mean(dim=1).unsqueeze(1)
         return embeddings
@@ -49,23 +51,27 @@ class LLMEmbedding(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         embeddings_1 = self.forward(batch["sentence1"])
         embeddings_2 = self.forward(batch["sentence2"])
-        similarities = []
         for e1, e2 in zip(embeddings_1, embeddings_2):
-            similarities.append(cosine_similarity(e1.detach().cpu().numpy(), e2.detach().cpu().numpy()))
-        similarities = torch.tensor(np.asarray(similarities), device=device, dtype=torch.float16)
-        similarities.requires_grad = True
-        loss = F.mse_loss(similarities.squeeze(), batch["score"].type(torch.float16))
+            self.similarities.append(F.cosine_similarity(e1, e2).detach().cpu())
+        similarities = torch.stack(self.similarities).to(device)
+        self.scores.extend(batch["score"].detach().cpu() / 5)
+        scores = torch.tensor(self.scores, device=device, dtype=torch.float32, requires_grad=True)
+        correlations = spearman_corrcoef(similarities.squeeze(1), scores).type(torch.float32)
+        loss = F.mse_loss(correlations, torch.tensor(1, device=device, dtype=torch.float32, requires_grad=True))
+        self.log("train_loss", loss, prog_bar=True)
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         embeddings_1 = self.forward(batch["sentence1"])
         embeddings_2 = self.forward(batch["sentence2"])
         similarities = []
         for e1, e2 in zip(embeddings_1, embeddings_2):
-            similarities.append(cosine_similarity(e1.detach().cpu().numpy(), e2.detach().cpu().numpy()))
-        similarities = torch.tensor(np.asarray(similarities), device=device, dtype=torch.float16)
-        similarities.requires_grad = True
-        loss = F.mse_loss(similarities.squeeze(), batch["score"].type(torch.float16))
+            self.similarities.append(F.cosine_similarity(e1, e2).detach().cpu())
+        similarities = torch.stack(self.similarities).to(device)
+        self.scores.extend(batch["score"].detach().cpu() / 5)
+        scores = torch.tensor(self.scores, device=device, dtype=torch.float32, requires_grad=True)
+        correlations = spearman_corrcoef(similarities.squeeze(1), scores).type(torch.float32)
+        loss = F.mse_loss(correlations, torch.tensor(1, device=device, dtype=torch.float32, requires_grad=True))
         self.log("val_loss", loss, prog_bar=True)
         return loss
 
@@ -78,16 +84,17 @@ def load_llm():
 
 
 if __name__ == "__main__":
-    dataset = load_dataset("mteb/sts12-sts")
+    train_dataset = load_dataset("mteb/sts12-sts", split="train[:400]")
+    test_dataset = load_dataset("mteb/sts12-sts", split="test[:40]")
     llm = load_llm()
-    train_loader = DataLoader(dataset["train"], batch_size=batch_size, shuffle=True, num_workers=4, persistent_workers=True, drop_last=True)
-    test_loader = DataLoader(dataset["test"], batch_size=batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, persistent_workers=True, drop_last=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         monitor="val_loss",
         dirpath="./checkpoints",
         filename="llm-embedding-{epoch:02d}-{val_loss:.2f}",
         save_top_k=1,
-        mode="min",
+        mode="min"
     )
     model = LLMEmbedding(llm)
     trainer = pl.Trainer(max_epochs=max_epochs, default_root_dir=os.getcwd(), callbacks=[checkpoint_callback])
