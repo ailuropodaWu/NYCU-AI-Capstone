@@ -1,15 +1,13 @@
 import os
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import pytorch_lightning as pl
+import lightning as L
 
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from llama_cpp import Llama
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 torch.set_float32_matmul_precision("medium")
@@ -17,55 +15,67 @@ torch.set_float32_matmul_precision("medium")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-n_ctx = 1024
+n_ctx = 512
+n_ebd = 256
 
-max_epochs = 4
+max_epochs = 3
 batch_size = 4
-learning_rate = 1e-3
+learning_rate = 1e-5
 
 
-class LLMEmbedding(pl.LightningModule):
-    def __init__(self, llm: Llama, embedding_size=4096):
+class LLMEmbedding(L.LightningModule):
+    def __init__(self, llm: Llama, embedding_size=4096, temperature=1):
         super(LLMEmbedding, self).__init__()
+        self.temperature = temperature
         self.llm = llm
         self.seq = nn.Sequential(
+            nn.Dropout(0.1),
             nn.Linear(embedding_size, 1024),
             nn.ReLU(),
             nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU()
+            nn.Linear(512, n_ebd),
+            nn.Tanh()
         )
         # self.save_hyperparameters()
 
+    def train_dataloader(self):
+        train_dataset = load_dataset("mteb/sts12-sts", split="train[:400]")
+        return DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, persistent_workers=True, drop_last=True)
+
+    def val_dataloader(self):
+        test_dataset = load_dataset("mteb/sts12-sts", split="test[:40]")
+        return DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
+
     def forward(self, input: str):
-        embeddings = torch.zeros((batch_size, n_ctx, 4096), device=device)
-        for i, sentence in enumerate(input):
-            e = torch.tensor(self.llm.embed(sentence), device=device)
-            embeddings[i] += F.pad(e, (0, 0, 0, n_ctx - e.shape[0]))
-        embeddings = self.seq(embeddings).mean(dim=1).unsqueeze(1)
+        embeddings = []
+        for sentence in input:
+            e = torch.tensor(self.llm.embed(sentence), device=device, requires_grad=True)
+            embeddings.append(self.seq(F.pad(e, (0, 0, 0, n_ctx - e.shape[0]))))
+        embeddings = torch.stack(embeddings).mean(dim=1)
         return embeddings
 
-    def training_step(self, batch, batch_idx):
-        embeddings_1 = self.forward(batch["sentence1"])
-        embeddings_2 = self.forward(batch["sentence2"])
-        similarities = []
-        for e1, e2 in zip(embeddings_1, embeddings_2):
-            similarities.append(cosine_similarity(e1.detach().cpu().numpy(), e2.detach().cpu().numpy()))
-        similarities = torch.tensor(np.asarray(similarities), device=device, dtype=torch.float16)
-        similarities.requires_grad = True
-        loss = F.mse_loss(similarities.squeeze(), batch["score"].type(torch.float16))
+    def training_step(self, batch):
+        embeddings = self.forward(batch["sentence1"])
+        embeddings_plus = self.forward(batch["sentence1"])
+        loss = torch.tensor(0, device=device, dtype=torch.float32, requires_grad=True)
+        for i in range(batch_size):
+            denominator = torch.tensor(0, device=device, dtype=torch.float32, requires_grad=True)
+            for j in range(batch_size):
+                denominator = denominator + torch.exp(F.cosine_similarity(embeddings[[i]], embeddings_plus[[j]]) / self.temperature)[0]
+            loss = loss - torch.log(torch.exp(F.cosine_similarity(embeddings[[i]], embeddings_plus[[i]]) / self.temperature) / denominator)[0]
+        self.log("train_loss", loss, prog_bar=True)
         return loss
-    
-    def validation_step(self, batch, batch_idx):
-        embeddings_1 = self.forward(batch["sentence1"])
-        embeddings_2 = self.forward(batch["sentence2"])
-        similarities = []
-        for e1, e2 in zip(embeddings_1, embeddings_2):
-            similarities.append(cosine_similarity(e1.detach().cpu().numpy(), e2.detach().cpu().numpy()))
-        similarities = torch.tensor(np.asarray(similarities), device=device, dtype=torch.float16)
-        similarities.requires_grad = True
-        loss = F.mse_loss(similarities.squeeze(), batch["score"].type(torch.float16))
+
+    def validation_step(self, batch):
+        embeddings = self.forward(batch["sentence1"])
+        embeddings_plus = self.forward(batch["sentence1"])
+        loss = torch.tensor(0, device=device, dtype=torch.float32, requires_grad=True)
+        for i in range(batch_size):
+            denominator = torch.tensor(0, device=device, dtype=torch.float32, requires_grad=True)
+            for j in range(batch_size):
+                denominator = denominator + torch.exp(F.cosine_similarity(embeddings[[i]], embeddings_plus[[j]]) / self.temperature)[0]
+            loss = loss - torch.log(torch.exp(F.cosine_similarity(embeddings[[i]], embeddings_plus[[i]]) / self.temperature) / denominator)[0]
         self.log("val_loss", loss, prog_bar=True)
         return loss
 
@@ -78,17 +88,7 @@ def load_llm():
 
 
 if __name__ == "__main__":
-    dataset = load_dataset("mteb/sts12-sts")
     llm = load_llm()
-    train_loader = DataLoader(dataset["train"], batch_size=batch_size, shuffle=True, num_workers=4, persistent_workers=True, drop_last=True)
-    test_loader = DataLoader(dataset["test"], batch_size=batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        monitor="val_loss",
-        dirpath="./checkpoints",
-        filename="llm-embedding-{epoch:02d}-{val_loss:.2f}",
-        save_top_k=1,
-        mode="min",
-    )
     model = LLMEmbedding(llm)
-    trainer = pl.Trainer(max_epochs=max_epochs, default_root_dir=os.getcwd(), callbacks=[checkpoint_callback])
-    trainer.fit(model, train_loader, test_loader)
+    trainer = L.Trainer(max_epochs=max_epochs, default_root_dir=os.getcwd())
+    trainer.fit(model)
