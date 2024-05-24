@@ -2,13 +2,12 @@ import torch
 import torch.nn.functional as F
 import pandas as pd
 import json
-
+import os
 from torch import Tensor
 from transformers import AutoTokenizer, AutoModel
 from tqdm import tqdm
 
-data_path = "./dataset/data.json"
-df = pd.read_json(data_path)
+
 tokenizer = AutoTokenizer.from_pretrained('intfloat/e5-large-v2')
 model = AutoModel.from_pretrained('intfloat/e5-large-v2')
 
@@ -23,24 +22,28 @@ def average_pool(last_hidden_states: Tensor,
 
 # Each input text should start with "query: " or "passage: ".
 # For tasks other than retrieval, you can simply use the "query: " prefix.
-def get_embedding(save_path="embedding_dict.json", use_saved=True):
+def get_embedding(save_root, use_saved=True, data_type='paragraph'):
+    assert data_type in ['sentence', 'paragraph'], "invalid data type"
+    save_path = os.path.join(save_root, f"{data_type}_embedding_dict.json")
+    data_path = f"./dataset/{data_type}_data.json"
+    df = pd.read_json(data_path)
     embedding_dict = {}
-    sentences = set()
+    datas = set()
     batch = []
-    batch_size = 32
+    batch_size = 32 if data_type == 'sentence' else 4
     batch_cnt = 0
-    print("Getting Embedding ...")
+    print(f"Getting {data_type} embedding ...")
     
     if use_saved:
         with open(save_path, "r") as fp:
             embedding_dict = json.load(fp)
         return embedding_dict
     for _, row in tqdm(df.iterrows()):
-        sentences.add(row["sentence1"])
-        sentences.add(row["sentence2"])
-    for sentence in tqdm(sentences):
-        embedding_dict[sentence] = batch_cnt
-        batch.append(sentence)
+        datas.add(row[f"{data_type}1"])
+        datas.add(row[f"{data_type}2"])
+    for data in tqdm(datas):
+        embedding_dict[data] = batch_cnt
+        batch.append(data)
         batch_cnt += 1
         if batch_cnt == batch_size:
             batch_cnt = 0
