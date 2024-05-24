@@ -3,13 +3,16 @@ import pandas as pd
 import time
 from tqdm import tqdm
 import json
+import os
 from argparse import ArgumentParser
 
 
-def get_embedding(save_path="embedding_dict.json", use_saved=True):
-    dataset_path = "./dataset/data.json"
+def get_embedding(save_root, use_saved=True, data_type="paragraph"):
+    assert data_type in ['sentence', 'paragraph'], "invalid data type"
+    save_path = os.path.join(save_root, f"{data_type}_embedding_dict.json")
+    dataset_path = f"./dataset/{data_type}_data.json"
     df = pd.read_json(dataset_path)
-    print("Getting Embedding ...")
+    print(f"Getting {data_type} embedding ...")
     
     if use_saved:
         with open(save_path, "r") as fp:
@@ -20,17 +23,18 @@ def get_embedding(save_path="embedding_dict.json", use_saved=True):
     vo = voyageai.Client(api_key=api_key)
     
     embedding_dict = {}
-    sentences = set()
+    datas = set()
     batch = []
     batch_cnt = 0
     batch_size = 128
     for _, row in tqdm(df.iterrows()):
-        sentences.add(row["sentence1"])
-        sentences.add(row["sentence2"])
+        datas.add(row[f"{data_type}1"])
+        datas.add(row[f"{data_type}2"])
+        
 
-    for sentence in tqdm(sentences):
-        embedding_dict[sentence] = batch_cnt
-        batch.append(sentence)
+    for data in tqdm(datas):
+        embedding_dict[data] = batch_cnt
+        batch.append(data)
         batch_cnt += 1
         if batch_cnt == batch_size:
             batch_cnt = 0

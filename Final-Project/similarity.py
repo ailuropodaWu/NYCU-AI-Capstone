@@ -5,8 +5,6 @@ import os
 from tqdm import tqdm
 from sklearn.metrics.pairwise import cosine_similarity
 
-dataset_path = "./dataset/data.json"
-df = pd.read_json(dataset_path)
 
 
 def cosine2score(cos_sim, score_type='linear'):
@@ -18,13 +16,16 @@ def cosine2score(cos_sim, score_type='linear'):
         score = np.exp(cos_sim - 1)
     return round(min(max(score, 0), 1) * 5, 1)
 
-def semantic_similarity(embedding_dict, model, score_type='linear', analyze=False):
-    pred_path = os.path.join(model, "prediction.json")
+def semantic_similarity(embedding_dict, model, score_type='linear', data_type='sentence', analyze=False):
+    
+    dataset_path = f"./dataset/{data_type}_data.json"
+    df = pd.read_json(dataset_path)
+    pred_path = os.path.join(model, f"{data_type}_prediction.json")
     similarity_list = []
     predictions = []
-    print(f"Embedding dim: {len(embedding_dict[df["sentence1"][0]])}")
+    print(f"Embedding dim: {len(embedding_dict[df[f"{data_type}1"][0]])}")
     for _, row in tqdm(df.iterrows()):
-        sen1, sen2 = row["sentence1"], row["sentence2"]
+        sen1, sen2 = row[f"{data_type}1"], row[f"{data_type}2"]
         similarity = cosine_similarity([embedding_dict[sen1]], [embedding_dict[sen2]]).flatten()
         similarity_list.append(similarity)
         pred = list(row.values)
@@ -39,10 +40,7 @@ def semantic_similarity(embedding_dict, model, score_type='linear', analyze=Fals
         plt.bar(x, h)
         plt.show()
         
-    predictions = pd.DataFrame(predictions, columns=["sentence1", "sentence2", "score", "tfidf-cos", "cos-sim"])
+    predictions = pd.DataFrame(predictions, columns=[f"{data_type}1", f"{data_type}2", "score", "tfidf-cos", "cos-sim"])
     print(predictions)
     predictions.to_json(pred_path, orient="records")
     return predictions
-
-def lexical_similarity(embedding, dict, model, score_type='linear', analyze=False):
-    pass
