@@ -11,7 +11,7 @@ from dataset import LLMEmbeddingDataset
 
 
 class LLMEmbeddingModel(L.LightningModule):
-    def __init__(self, batch_size=4, llm_emb=4096, n_ctx=512, n_emb=256, learning_rate=1e-5, temperature=1, dataset_path="../dataset/extended_data.json"):
+    def __init__(self, batch_size=4, llm_emb=4096, n_ctx=512, n_emb=256, learning_rate=1e-5, temperature=0.05, dataset_path="../dataset/extended_data.json"):
         super(LLMEmbeddingModel, self).__init__()
         self.batch_size = batch_size
         self.n_ctx = n_ctx
@@ -40,7 +40,7 @@ class LLMEmbeddingModel(L.LightningModule):
         test_dataset = LLMEmbeddingDataset(dataset_path=self.dataset_path, mode="test")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
 
-    def forward(self, inputs: list[str]):
+    def forward(self, inputs):
         embeddings = []
         for sentence in inputs:
             e = torch.tensor(self.llm.embed(sentence), device=self.device, requires_grad=True)
