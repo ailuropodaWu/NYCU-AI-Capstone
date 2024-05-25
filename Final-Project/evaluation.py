@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--analyze', action="store_true", default=False)
     parser.add_argument('--no_calculate', action="store_true", default=False)
     
-    model_list = ['e5', 'voyage', 'text_embedding']
+    model_list = ['e5', 'voyage', 'text_embedding', 'llm']
     args = parser.parse_args()
     models = args.model
     score_type = args.score_type

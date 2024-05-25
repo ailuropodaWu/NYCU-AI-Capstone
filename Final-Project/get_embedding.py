@@ -15,10 +15,10 @@ use_saved = not args.not_use_saved
 
 sys.path.append(f"./{model}/")
 
-if model is "llm":
+if model == "llm":
     from inference import get_embedding # type: ignore
-    embedding_dict = get_embedding(model, use_saved=use_saved)
+    embedding_dict = get_embedding(model, ckpt, use_saved=use_saved)
 else:
     from embedding import get_embedding # type: ignore
-    embedding_dict = get_embedding(model, ckpt, use_saved=use_saved)
+    embedding_dict = get_embedding(model, use_saved=use_saved)
     

@@ -23,7 +23,7 @@ def semantic_similarity(embedding_dict, model, score_type='linear', data_type='s
     pred_path = os.path.join(model, f"{data_type}_prediction.json")
     similarity_list = []
     predictions = []
-    print(f"Embedding dim: {len(embedding_dict[df[f"{data_type}1"][0]])}")
+    print(f"Embedding dim: {len(embedding_dict[df[f'{data_type}1'][0]])}")
     for _, row in tqdm(df.iterrows()):
         sen1, sen2 = row[f"{data_type}1"], row[f"{data_type}2"]
         similarity = cosine_similarity([embedding_dict[sen1]], [embedding_dict[sen2]]).flatten()
