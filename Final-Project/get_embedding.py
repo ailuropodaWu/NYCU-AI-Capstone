@@ -17,8 +17,8 @@ sys.path.append(f"./{model}/")
 
 if model == "llm":
     from inference import get_embedding # type: ignore
-    embedding_dict = get_embedding(model, ckpt, use_saved=use_saved)
+    embedding_dict = get_embedding(model, ckpt, use_saved=use_saved, data_type=data_type)
 else:
     from embedding import get_embedding # type: ignore
-    embedding_dict = get_embedding(model, use_saved=use_saved)
+    embedding_dict = get_embedding(model, use_saved=use_saved, data_type=data_type)
     
