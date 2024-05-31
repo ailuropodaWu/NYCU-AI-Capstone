@@ -33,6 +33,7 @@ class e5Embedding(pl.LightningModule):
         embeddings_plus = self.forward(batch)
         embeddings = self.projection(embeddings)
         embeddings_plus = self.projection(embeddings_plus)
+        
         loss = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=True)
         for i in range(len(embeddings)):
             denominator = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=True)
@@ -57,5 +58,5 @@ class e5Embedding(pl.LightningModule):
 if __name__ == "__main__":
     model = e5Embedding()
     trainer = pl.Trainer(max_epochs=2)
-    data_module = DataModule("../dataset/extended_data.json", 4)
+    data_module = DataModule(batch_size=4)
     trainer.fit(model, data_module)

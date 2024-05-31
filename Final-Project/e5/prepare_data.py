@@ -2,6 +2,7 @@ import json
 import lightning as pl
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer
+from datasets import load_dataset
 
 class CustomDataset(Dataset):
     def __init__(self, texts, transform=None):
@@ -22,18 +23,24 @@ class CustomDataset(Dataset):
         return inputs
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, dataset_path, batch_size=32):
+    def __init__(self, dataset_path=None, batch_size=32):
         super().__init__()
         self.dataset_path = dataset_path
         self.batch_size = batch_size
         self.init_dataset()
+        self.setup()
 
     def init_dataset(self):
-        with open(self.dataset_path, "r") as fp:
-            self.paragraphs = [data["paragraph1"] for data in json.load(fp)][:100]
-
-        self.train_texts = self.paragraphs[:int(0.8 * len(self.paragraphs))]
-        self.val_texts = self.paragraphs[int(0.8 * len(self.paragraphs)):]
+        if self.dataset_path:
+            with open(self.dataset_path, "r") as fp:
+                self.paragraphs = [data["paragraph1"] for data in json.load(fp)][:100]
+            self.train_texts = self.paragraphs[:int(0.8 * len(self.paragraphs))]
+            self.val_texts = self.paragraphs[int(0.8 * len(self.paragraphs)):]
+        else:
+            dataset = load_dataset("wikipedia", "20220301.simple", split="train[:10000]")
+            self.texts = dataset["text"]
+            self.train_texts = self.texts[:int(0.8 * len(self.texts))]
+            self.val_texts = self.texts[int(0.8 * len(self.texts)):]
 
     def setup(self, stage=None):
         self.train_dataset = CustomDataset(self.train_texts)
@@ -44,4 +51,7 @@ class DataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=4)
+    
+if __name__ == "__main__":
+    test_data_module = DataModule(batch_size=4)
 
