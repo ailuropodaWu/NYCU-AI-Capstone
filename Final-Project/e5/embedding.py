@@ -26,14 +26,14 @@ def get_embedding(save_root, use_saved=True, data_type='paragraph'):
     assert data_type in ['sentence', 'paragraph'], "invalid data type"
     save_path = os.path.join(save_root, f"{data_type}_embedding_dict.json")
     data_path = f"./dataset/{data_type}_data.json"
-    df = pd.read_json(data_path)
+    df = pd.read_json(data_path)[-5000:]
     embedding_dict = {}
     datas = set()
     batch = []
     batch_size = 32 if data_type == 'sentence' else 4
     batch_cnt = 0
     print(f"Getting {data_type} embedding ...")
-    
+
     if use_saved:
         with open(save_path, "r") as fp:
             embedding_dict = json.load(fp)
@@ -43,7 +43,7 @@ def get_embedding(save_root, use_saved=True, data_type='paragraph'):
         datas.add(row[f"{data_type}2"])
     for data in tqdm(datas):
         embedding_dict[data] = batch_cnt
-        batch.append(data)
+        batch.append(f"query: {data}")
         batch_cnt += 1
         if batch_cnt == batch_size:
             batch_cnt = 0
@@ -52,17 +52,19 @@ def get_embedding(save_root, use_saved=True, data_type='paragraph'):
             embeddings = average_pool(outputs.last_hidden_state, batch_dict['attention_mask'])
             embeddings = F.normalize(embeddings, p=2, dim=1)
             for s in batch:
+                s = s.removeprefix("query: ")
                 embedding_dict[s] = embeddings[embedding_dict[s]].cpu().detach().tolist()
             batch = []
-            
+
     if len(batch) > 0:
         batch_dict = tokenizer(batch, max_length=512, padding=True, truncation=True, return_tensors='pt').to(device)
         outputs = model(**batch_dict)
         embeddings = average_pool(outputs.last_hidden_state, batch_dict['attention_mask'])
         embeddings = F.normalize(embeddings, p=2, dim=1)
         for s in batch:
+            s = s.removeprefix("query: ")
             embedding_dict[s] = embeddings[embedding_dict[s]].cpu().detach().tolist()
-        
+
     with open(save_path, "w") as fp:
         json.dump(embedding_dict, fp)
     return embedding_dict

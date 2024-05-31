@@ -12,11 +12,14 @@ class LLMEmbeddingDataset(Dataset):
         self.init_dataset()
 
     def init_dataset(self):
+        excluded = 5000
         with open(self.dataset_path, "r") as fp:
-            self.paragraphs = [data["paragraph1"] for data in json.load(fp)][:4000]
+            dataset = json.load(fp)
+            self.paragraphs.extend([data["paragraph1"] for data in dataset][:-excluded])
+        self.paragraphs = list(set(self.paragraphs))
 
-        if self.mode == "train": self.paragraphs = self.paragraphs[:int(0.8 * len(self.paragraphs))]
-        elif self.mode == "test": self.paragraphs = self.paragraphs[int(0.8 * len(self.paragraphs)):]
+        if self.mode == "train": self.paragraphs = self.paragraphs[:-1000]
+        elif self.mode == "test": self.paragraphs = self.paragraphs[-1000:]
         else: raise ValueError("Invalid mode")
 
     def __len__(self):
