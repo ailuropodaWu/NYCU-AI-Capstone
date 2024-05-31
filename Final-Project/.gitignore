@@ -1,3 +1,5 @@
 *embedding_dict.json
 *prediction.json
 dataset/simcse
+dataset/simplewiki
+dataset/kaggle
