@@ -15,7 +15,7 @@ class e5Embedding(pl.LightningModule):
         super().__init__()
         self.temperature = temperature
         self.learning_rate = learning_rate
-        self.encoder = AutoModel.from_pretrained('intfloat/e5-large-v2')
+        self.encoder = AutoModel.from_pretrained('intfloat/e5-base-v2')
         self.projection = torch.nn.Sequential(
             torch.nn.Linear(self.encoder.config.hidden_size, 256),
             torch.nn.ReLU(),
@@ -56,7 +56,7 @@ class e5Embedding(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
 if __name__ == "__main__":
-    model = e5Embedding()
-    trainer = pl.Trainer(max_epochs=2)
-    data_module = DataModule(batch_size=4)
+    model = e5Embedding(temperature=0.05, learning_rate=1e-5)
+    trainer = pl.Trainer(max_epochs=4)
+    data_module = DataModule(batch_size=6)
     trainer.fit(model, data_module)

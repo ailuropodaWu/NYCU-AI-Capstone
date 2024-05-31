@@ -3,3 +3,5 @@
 dataset/simcse
 dataset/simplewiki
 dataset/kaggle
+dataset/document_data
+.vscode

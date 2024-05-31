@@ -1,5 +1,7 @@
 import json
 import lightning as pl
+import os
+from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer
 from datasets import load_dataset
@@ -8,7 +10,7 @@ class CustomDataset(Dataset):
     def __init__(self, texts, transform=None):
         self.texts = texts
         self.transform = transform
-        self.tokenizer = AutoTokenizer.from_pretrained("intfloat/e5-large-v2")
+        self.tokenizer = AutoTokenizer.from_pretrained("intfloat/e5-base-v2")
 
     def __len__(self):
         return len(self.texts)
@@ -51,6 +53,14 @@ class DataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=4)
+    
+def get_test_data(data_path: str):
+    data = []
+    for filename in os.listdir(data_path):
+        if filename.endswith('.txt'):
+            with open(os.path.join(data_path, filename)) as f:
+                data.append(f.read())
+    return CustomDataset(data)
     
 if __name__ == "__main__":
     test_data_module = DataModule(batch_size=4)
