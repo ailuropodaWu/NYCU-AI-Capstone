@@ -7,6 +7,7 @@ import lightning as L
 from torch.utils.data import DataLoader
 from llama_cpp import Llama
 
+from datasets import load_dataset
 from dataset import LLMEmbeddingDataset
 
 
@@ -27,17 +28,29 @@ class LLMEmbeddingModel(L.LightningModule):
             nn.Linear(1024, n_emb),
             nn.Tanh()
         )
+        self.mlp = nn.Sequential(
+            nn.Linear(n_emb, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU()
+        )
 
         self.save_hyperparameters()
 
-        self.llm = Llama(model_path="C:\\Users\\user\\.cache\\lm-studio\\models\\lmstudio-community\\Meta-Llama-3-8B-Instruct-BPE-fix-GGUF\\Meta-Llama-3-8B-Instruct-Q6_K.gguf", n_gpu_layers=-1, n_ctx=n_ctx, embedding=True, verbose=False)
+        self.llm = Llama(model_path="C:/Users/user/.cache/lm-studio/models/lmstudio-community/Meta-Llama-3-8B-Instruct-BPE-fix-GGUF/Meta-Llama-3-8B-Instruct-Q6_K.gguf", n_gpu_layers=-1, n_ctx=n_ctx, embedding=True, verbose=False)
 
     def train_dataloader(self):
         train_dataset = LLMEmbeddingDataset(dataset_path=self.dataset_path, mode="train")
+        # train_dataset = load_dataset("text", data_files=["../dataset/simcse/wiki1m_for_simcse.txt"], split="train[:5000]")
+        print(f"train dataset size: {len(train_dataset)}")
         return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, persistent_workers=True, drop_last=True)
 
     def val_dataloader(self):
         test_dataset = LLMEmbeddingDataset(dataset_path=self.dataset_path, mode="test")
+        # test_dataset = load_dataset("text", data_files=["../dataset/simcse/wiki1m_for_simcse.txt"])
+        print(f"test dataset size: {len(test_dataset)}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
 
     def forward(self, inputs):
@@ -49,8 +62,8 @@ class LLMEmbeddingModel(L.LightningModule):
         return embeddings
 
     def training_step(self, batch):
-        embeddings = self.forward(batch)
-        embeddings_plus = self.forward(batch)
+        embeddings = self.mlp(self.forward(batch))
+        embeddings_plus = self.mlp(self.forward(batch))
         loss = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=True)
         for i in range(self.batch_size):
             denominator = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=True)
@@ -61,8 +74,8 @@ class LLMEmbeddingModel(L.LightningModule):
         return loss
 
     def validation_step(self, batch):
-        embeddings = self.forward(batch)
-        embeddings_plus = self.forward(batch)
+        embeddings = self.mlp(self.forward(batch))
+        embeddings_plus = self.mlp(self.forward(batch))
         loss = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=True)
         for i in range(self.batch_size):
             denominator = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=True)
