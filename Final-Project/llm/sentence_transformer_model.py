@@ -36,13 +36,17 @@ class SentenceTransformerModel(L.LightningModule):
     def configure_optimizers(self):
         return optim.Adam(self.parameters(), lr=self.learning_rate)
 
+    def on_save_checkpoint(self, checkpoint) -> None:
+        torch.save(self.lm.state_dict(), "./e5-large-v2.pth")
+        return super().on_save_checkpoint(checkpoint)
+
     def train_dataloader(self):
-        train_dataset = load_dataset("wikipedia", "20220301.simple", split="train[:30000]")
+        train_dataset = load_dataset("wikipedia", "20220301.simple", split="train[:5000]")
         print(f"train dataset size: {len(train_dataset)}")
         return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, persistent_workers=True, drop_last=True)
 
     def val_dataloader(self):
-        test_dataset = load_dataset("wikipedia", "20220301.simple", split="train[30000:30500]")
+        test_dataset = load_dataset("wikipedia", "20220301.simple", split="train[5000:5500]")
         print(f"test dataset size: {len(test_dataset)}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
 
@@ -85,3 +89,15 @@ if __name__ == "__main__":
 
     # dataset = load_dataset("wikipedia", "20220301.simple", split="train[:5000]")
     # print(dataset[0], dataset[1], dataset[2])
+
+    model = SentenceTransformerModel("intfloat/e5-large-v2").to("cuda")
+    model.load_state_dict(torch.load("./e5-large-v2.pth"), strict=False)
+    model.eval()
+
+    dataset = load_dataset("csv", data_files=["df_file.csv"], split="train")
+
+    for data in dataset:
+        text, label = data["Text"], data["Label"]
+        embeddings = model.forward(text)
+        print(embeddings, label)
+        break
