@@ -6,14 +6,24 @@ import pandas as pd
 from tqdm import tqdm
 from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
+from sentence_transformer_model import SentenceTransformerModel
 
 
 random.seed(42)
 
+model_name = "all-MiniLM-L12-v2"
+
+
+def check_state_dict(m1, m2):
+    for p1, p2 in zip(m1.parameters(), m2.parameters()):
+        if p1.data.ne(p2.data).sum() > 0:
+            return False
+    return True
+
 
 def evaluate():
-    model = SentenceTransformer("intfloat/e5-large-v2", device="cuda")
-    model.load_state_dict(torch.load("./e5-large-v2.pth"))
+    # model = SentenceTransformer(model_name, device="cuda")
+    model = SentenceTransformerModel.load_from_checkpoint("lightning_logs/version_3/checkpoints/epoch=0-step=312.ckpt")
     model.eval()
 
     dataset = load_dataset("csv", data_files=["df_file.csv"], split="train")
@@ -22,7 +32,7 @@ def evaluate():
 
     for data in tqdm(dataset, desc="Making evaluation data"):
         text, label = data["Text"], data["Label"]
-        records[label].append(f"query: {text}")
+        records[label].append(text)
 
     print(f"records distribution ({', '.join(f'{label}: {len(texts)}' for label, texts in records.items())})")
 
