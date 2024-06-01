@@ -41,18 +41,17 @@ class SentenceTransformerModel(L.LightningModule):
         return super().on_save_checkpoint(checkpoint)
 
     def train_dataloader(self):
-        train_dataset = load_dataset("wikipedia", "20220301.simple", split="train[:5000]")
+        train_dataset = load_dataset("wikipedia", "20220301.simple", split="train[:20000]")
         print(f"train dataset size: {len(train_dataset)}")
         return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, persistent_workers=True, drop_last=True)
 
     def val_dataloader(self):
-        test_dataset = load_dataset("wikipedia", "20220301.simple", split="train[5000:5500]")
+        test_dataset = load_dataset("wikipedia", "20220301.simple", split="train[20000:20500]")
         print(f"test dataset size: {len(test_dataset)}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, persistent_workers=True, drop_last=True)
 
     def forward(self, inputs):
         embeddings = self.lm.encode([f"query: {sentence}" for sentence in inputs], normalize_embeddings=True, convert_to_tensor=True, device=self.device)
-        # embeddings = self.seq(embeddings)
         return embeddings
 
     def training_step(self, batch):
@@ -83,21 +82,6 @@ class SentenceTransformerModel(L.LightningModule):
 
 
 if __name__ == "__main__":
-    model = SentenceTransformerModel(batch_size=16, n_ctx=512, n_emb=1024, learning_rate=1e-5, temperature=0.03)
+    model = SentenceTransformerModel(batch_size=64, n_ctx=512, n_emb=1024, learning_rate=1e-5, temperature=0.03)
     trainer = L.Trainer(max_epochs=1, default_root_dir=os.getcwd(), log_every_n_steps=5)
     trainer.fit(model)
-
-    # dataset = load_dataset("wikipedia", "20220301.simple", split="train[:5000]")
-    # print(dataset[0], dataset[1], dataset[2])
-
-    model = SentenceTransformerModel("intfloat/e5-large-v2").to("cuda")
-    model.load_state_dict(torch.load("./e5-large-v2.pth"), strict=False)
-    model.eval()
-
-    dataset = load_dataset("csv", data_files=["df_file.csv"], split="train")
-
-    for data in dataset:
-        text, label = data["Text"], data["Label"]
-        embeddings = model.forward(text)
-        print(embeddings, label)
-        break
