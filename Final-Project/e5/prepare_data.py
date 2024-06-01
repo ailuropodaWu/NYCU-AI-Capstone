@@ -16,13 +16,14 @@ class CustomDataset(Dataset):
         return len(self.texts)
 
     def __getitem__(self, idx):
-        text = self.texts[idx]
-        inputs = self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512)
-        for key in inputs.keys():
-            inputs[key] = inputs[key].squeeze(0)
-        if self.transform:
-            inputs = self.transform(inputs)
-        return inputs
+        return self.texts[idx]
+        # text = self.texts[idx]
+        # inputs = self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512)
+        # for key in inputs.keys():
+        #     inputs[key] = inputs[key].squeeze(0)
+        # if self.transform:
+        #     inputs = self.transform(inputs)
+        # return inputs
 
 class DataModule(pl.LightningDataModule):
     def __init__(self, dataset_path=None, batch_size=32):

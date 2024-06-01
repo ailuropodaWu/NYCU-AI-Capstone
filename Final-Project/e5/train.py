@@ -2,31 +2,25 @@ import torch
 import torch.nn.functional as F
 import lightning as pl
 from torch import Tensor
-from transformers import AutoModel
+from sentence_transformers import SentenceTransformer
 from prepare_data import DataModule
 
-def average_pool(last_hidden_states: Tensor,
-                 attention_mask: Tensor) -> Tensor:
-    last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
-    return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
 class e5Embedding(pl.LightningModule):
     def __init__(self, temperature=0.5, learning_rate=1e-4):
         super().__init__()
         self.temperature = temperature
         self.learning_rate = learning_rate
-        self.encoder = AutoModel.from_pretrained('intfloat/e5-base-v2')
+        self.encoder = SentenceTransformer('intfloat/e5-large-v2')
         self.projection = torch.nn.Sequential(
-            torch.nn.Linear(self.encoder.config.hidden_size, 256),
+            torch.nn.Linear(1024, 256),
             torch.nn.ReLU(),
             torch.nn.Linear(256, 128)
         )
 
     def forward(self, x):
-        outputs = self.encoder(**x)
-        embeddings = average_pool(outputs.last_hidden_state, x['attention_mask'])
-        embeddings = F.normalize(embeddings, p=2, dim=1)
-        return embeddings
+        outputs = self.encoder.encode([f"query: {sentence}" for sentence in x], normalize_embeddings=True, convert_to_tensor=True, device=self.device)
+        return outputs
     
     def info_nce_loss(self, batch):
         embeddings = self.forward(batch)
