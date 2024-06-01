@@ -5,15 +5,15 @@ import pandas as pd
 
 from tqdm import tqdm
 from datasets import load_dataset
-from sentence_transformer_model import SentenceTransformerModel
+from sentence_transformers import SentenceTransformer
 
 
 random.seed(42)
 
 
 def evaluate():
-    model = SentenceTransformerModel("intfloat/e5-large-v2").to("cuda")
-    model.load_state_dict(torch.load("./e5-large-v2.pth"), strict=False)
+    model = SentenceTransformer("intfloat/e5-large-v2", device="cuda")
+    model.load_state_dict(torch.load("./e5-large-v2.pth"))
     model.eval()
 
     dataset = load_dataset("csv", data_files=["df_file.csv"], split="train")
@@ -22,14 +22,14 @@ def evaluate():
 
     for data in tqdm(dataset, desc="Making evaluation data"):
         text, label = data["Text"], data["Label"]
-        records[label].append(text)
+        records[label].append(f"query: {text}")
 
     print(f"records distribution ({', '.join(f'{label}: {len(texts)}' for label, texts in records.items())})")
 
     for data in tqdm(dataset, desc="Evaluating model"):
         text, label = data["Text"], data["Label"]
-        samples = [random.sample(texts, 1) for texts in records.values()] + [text]
-        embeddings = model(samples)
+        samples = [random.sample(texts, 1)[0] for texts in records.values()] + [text]
+        embeddings = model.encode(samples, convert_to_tensor=True, device="cuda")
         similarities = [torch.cosine_similarity(embed, embeddings[[-1]]).cpu() for embed in embeddings[:-1]]
         pred = np.argmax(similarities).item()
         results.append((label, pred))
